@@ -34,18 +34,14 @@ def locate_image(image, bottom_half=False):
     except:
         return None
 
-def click_button(image, bottom_half=False, retries=3):
-    """Click a button by its screenshot."""
-    for _ in range(retries):
-        box = locate_image(image, bottom_half=bottom_half)
-        if box:
-            pyautogui.click(pyautogui.center(box))
-            time.sleep(1)
-            return True
-        time.sleep(0.5)
-    if DEBUG_MODE:
-        print(f"⚠️ Could not find: {image}")
-    return False
+def press_hotkey(key1, key2, delay=0.5):
+    """Press a hotkey combination (e.g., Shift+2)."""
+    keyboard.press(key1)
+    keyboard.press(key2)
+    time.sleep(0.05)
+    keyboard.release(key2)
+    keyboard.release(key1)
+    time.sleep(delay)
 
 def check_inventory_full():
     """Check if inventory full popup appears."""
@@ -76,15 +72,20 @@ def harvest():
 def sell_crops():
     """Handle selling crops when inventory is full."""
     print("⚠️ Inventory full! Selling crops...")
-    if click_button("sell_button.png"):
-        print("✅ Sell button clicked")
-        time.sleep(0.5)
-        if click_button("sell_all_button.png", bottom_half=True):
-            print("✅ Sell All clicked")
-            time.sleep(1)
-        if click_button("garden_button.png"):
-            print("✅ Returned to Garden")
-            time.sleep(0.5)
+    
+    # Open sell menu (Shift+3)
+    press_hotkey(Key.shift, '3')
+    print("✅ Opened Sell menu")
+    
+    # Press space to sell all
+    press_key(Key.space)
+    time.sleep(0.5)
+    print("✅ Sold all crops")
+    
+    # Return to garden (Shift+2)
+    press_hotkey(Key.shift, '2')
+    print("✅ Returned to Garden")
+    time.sleep(0.5)
 
 def return_to_start(last_row_index):
     """Smartly return to starting position based on where we ended."""
