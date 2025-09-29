@@ -16,6 +16,9 @@ MOVE_DELAY = 0.15          # delay for moving 1 step
 HARVEST_DELAY = 0.1        # delay between harvest presses
 LOOP_COOLDOWN = 2          # delay between full grid cycles
 
+# Image folder path (change this to your folder name)
+IMAGE_FOLDER = "images/"   # e.g., "images/", "screenshots/", or "" for root
+
 # Keyboard controller
 keyboard = Controller()
 
@@ -45,7 +48,7 @@ def press_hotkey(key1, key2, delay=0.5):
 
 def check_inventory_full():
     """Check if inventory full popup appears."""
-    return locate_image("inventory_full.png") is not None
+    return locate_image(f"{IMAGE_FOLDER}inventory_full.png") is not None
 
 # =========================
 # GAME ACTIONS
