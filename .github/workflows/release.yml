@@ -2,8 +2,8 @@ name: Build and Release
 
 on:
   push:
-    tags:
-      - "v*"   # Trigger only when pushing tags like v1.0.0
+    branches:
+      - main   # Trigger on every push to main branch
 
 jobs:
   build:
@@ -12,11 +12,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # ✅ fetch full history & tags
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"  # Updated to match your local version
+          python-version: "3.13"
 
       - name: Install dependencies
         run: |
@@ -59,6 +61,27 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout repo (for tags)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_latest
+        run: |
+          latest=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "latest=$latest" >> $GITHUB_OUTPUT
+
+      - name: Bump version
+        id: bump
+        run: |
+          latest="${{ steps.get_latest.outputs.latest }}"
+          version="${latest#v}" # strip 'v'
+          IFS='.' read -r major minor patch <<< "$version"
+          patch=$((patch+1))
+          new="v$major.$minor.$patch"
+          echo "new_version=$new" >> $GITHUB_OUTPUT
+
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
@@ -68,6 +91,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: "MagicGardenBot.zip"
+          tag_name: ${{ steps.bump.outputs.new_version }}
+          name: "Release ${{ steps.bump.outputs.new_version }}"
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
