@@ -68,31 +68,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: "MagicGardenBot.zip"
-          body: |
-            ## Magic Garden Bot Release
-            
-            ### What's New
-            - Fixed OpenCV bundling in executable
-            - Improved error handling and logging
-            - Enhanced GUI with activity log
-            - Configurable settings with save/load
-            
-            ### Installation
-            1. Download `MagicGardenBot.zip`
-            2. Extract the zip file
-            3. Run `MagicGardenBot.exe`
-            
-            ### Requirements
-            - Windows 10/11
-            - Game window must be visible
-            - Images folder included in the bundle
-            
-            ### Usage
-            1. Position your character at the starting point (top-left of your farm grid)
-            2. Click START in the bot interface
-            3. Switch to game window within 3 seconds
-            4. Bot will automatically harvest and sell crops
-            
-            ⚠️ **Note:** Move mouse to top-left corner for emergency stop
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
