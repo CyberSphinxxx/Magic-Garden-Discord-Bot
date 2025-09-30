@@ -16,24 +16,37 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: "3.13"  # Updated to match your local version
 
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pyinstaller
+          pip install pyinstaller pyautogui opencv-python numpy pynput pillow
 
-      - name: Build exe
+      - name: Verify files exist
         run: |
-          pyinstaller --onefile src/MagicGardenBot.py
+          dir src
+          dir src\images
+          echo "Files verified"
+
+      - name: Build exe with spec file
+        run: |
+          cd src
+          python -m PyInstaller MagicGardenBot.spec --clean
+
+      - name: Verify build output
+        run: |
+          dir src\dist
+          echo "Build complete"
 
       - name: Package release files
         run: |
           mkdir release
-          copy dist\*.exe release\
-          copy README.md release\
-          copy config.example.json release\   # Add config files if you have them
-          powershell Compress-Archive -Path release\* -DestinationPath MagicGardenBot.zip
+          copy src\dist\MagicGardenBot.exe release\
+          copy README.md release\ 2>nul || echo "README.md not found, skipping"
+          copy config.example.json release\ 2>nul || echo "config.example.json not found, skipping"
+          echo "Creating release package..."
+          powershell Compress-Archive -Path release\* -DestinationPath MagicGardenBot.zip -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -55,5 +68,31 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: "MagicGardenBot.zip"
+          body: |
+            ## Magic Garden Bot Release
+            
+            ### What's New
+            - Fixed OpenCV bundling in executable
+            - Improved error handling and logging
+            - Enhanced GUI with activity log
+            - Configurable settings with save/load
+            
+            ### Installation
+            1. Download `MagicGardenBot.zip`
+            2. Extract the zip file
+            3. Run `MagicGardenBot.exe`
+            
+            ### Requirements
+            - Windows 10/11
+            - Game window must be visible
+            - Images folder included in the bundle
+            
+            ### Usage
+            1. Position your character at the starting point (top-left of your farm grid)
+            2. Click START in the bot interface
+            3. Switch to game window within 3 seconds
+            4. Bot will automatically harvest and sell crops
+            
+            ⚠️ **Note:** Move mouse to top-left corner for emergency stop
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
