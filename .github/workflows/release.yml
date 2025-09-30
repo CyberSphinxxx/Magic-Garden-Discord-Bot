@@ -35,7 +35,7 @@ jobs:
       - name: Build exe with spec file
         run: |
           cd src
-          python -m PyInstaller MagicGardenBot.spec --clean --onedir --windowed
+          python -m PyInstaller MagicGardenBot.spec --clean
 
       - name: Verify build output
         run: |
