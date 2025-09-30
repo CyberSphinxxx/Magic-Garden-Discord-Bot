@@ -330,6 +330,4 @@ If you encounter issues:
 
 ---
 
-**Made with ❤️ for automated farming**
-
 🌱 Happy Harvesting! 🌱
