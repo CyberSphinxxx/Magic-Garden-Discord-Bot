@@ -100,10 +100,6 @@ jobs:
           body: |
             ## Magic Garden Bot Release
 
-            ### What's New
-            - Automatic patch version bump
-            - Latest updates from main branch
-
             ### Installation
             1. Download `MagicGardenBot.zip`
             2. Extract the zip file

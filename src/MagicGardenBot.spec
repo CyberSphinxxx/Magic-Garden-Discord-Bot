@@ -56,5 +56,6 @@ exe = EXE(
     target_arch=None,
     codesign_identity=None,
     entitlements_file=None,
-    icon=None,  # Add icon='icon.ico' if you have one
+    icon='icon.ico',
+    version='version.txt',
 )
