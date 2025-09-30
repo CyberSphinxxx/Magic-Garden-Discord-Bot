@@ -1,0 +1,45 @@
+# ==========================
+# Python
+# ==========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Logs and temp files
+*.log
+*.pot
+*.pyc
+*.pyo
+*.pyd
+*.tmp
+*.swp
+.DS_Store
+
+# ==========================
+# PyInstaller build outputs
+# ==========================
+build/
+dist/
+*.spec
+*.exe
+
+# ==========================
+# IDE / Editor
+# ==========================
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# ==========================
+# OS-specific
+# ==========================
+Thumbs.db
+ehthumbs.db
+Desktop.ini
