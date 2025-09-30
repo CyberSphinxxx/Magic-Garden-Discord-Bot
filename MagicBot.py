@@ -4,31 +4,59 @@ import cv2
 import numpy as np
 from pynput.keyboard import Controller, Key
 from datetime import datetime
-import sys
+import tkinter as tk
+from tkinter import ttk, scrolledtext, messagebox
+import threading
+import json
+import os
 
 # =========================
 # CONFIG
 # =========================
-GRID_SIZE = 10             # 10x10 plots
-HARVEST_COUNT = 5          # How many times to press space per plot
-DEBUG_MODE = True
-CONFIDENCE = 0.8
+class Config:
+    GRID_SIZE = 10
+    HARVEST_COUNT = 5
+    CONFIDENCE = 0.8
+    MOVE_DELAY = 0.15
+    HARVEST_DELAY = 0.1
+    LOOP_COOLDOWN = 2
+    SELL_RETURN_DELAY = 1.0
+    IMAGE_FOLDER = "images/"
+    
+    @classmethod
+    def save(cls):
+        """Save config to file."""
+        config_dict = {
+            'GRID_SIZE': cls.GRID_SIZE,
+            'HARVEST_COUNT': cls.HARVEST_COUNT,
+            'MOVE_DELAY': cls.MOVE_DELAY,
+            'HARVEST_DELAY': cls.HARVEST_DELAY,
+            'LOOP_COOLDOWN': cls.LOOP_COOLDOWN,
+            'SELL_RETURN_DELAY': cls.SELL_RETURN_DELAY,
+            'IMAGE_FOLDER': cls.IMAGE_FOLDER,
+        }
+        with open('bot_config.json', 'w') as f:
+            json.dump(config_dict, f, indent=4)
+    
+    @classmethod
+    def load(cls):
+        """Load config from file."""
+        try:
+            if os.path.exists('bot_config.json'):
+                with open('bot_config.json', 'r') as f:
+                    config_dict = json.load(f)
+                    for key, value in config_dict.items():
+                        setattr(cls, key, value)
+        except Exception as e:
+            print(f"Could not load config: {e}")
 
-MOVE_DELAY = 0.15          # delay for moving 1 step
-HARVEST_DELAY = 0.1        # delay between harvest presses
-LOOP_COOLDOWN = 2          # delay between full grid cycles
-SELL_RETURN_DELAY = 1.0    # delay after returning from sell menu
-
-# Image folder path (change this to your folder name)
-IMAGE_FOLDER = "images/"   # e.g., "images/", "screenshots/", or "" for root
-
-# Failsafe: Move mouse to corner to emergency stop
+# Failsafe
 pyautogui.FAILSAFE = True
 
 # Keyboard controller
 keyboard = Controller()
 
-# Statistics tracking
+# Statistics
 stats = {
     'total_harvests': 0,
     'total_sells': 0,
@@ -36,18 +64,23 @@ stats = {
     'start_time': None,
     'last_sell_time': None,
     'errors': 0,
-    'inventory_checks': 0
+    'inventory_checks': 0,
+    'cycles': 0
 }
 
-# Current position tracking
+# Position tracking
 current_position = {'row': 0, 'col': 0}
+
+# Bot state
+bot_running = False
+bot_paused = False
 
 # =========================
 # HELPER FUNCTIONS
 # =========================
 
 def locate_image(image, bottom_half=False, grayscale=True):
-    """Locate image on screen (top or bottom half)."""
+    """Locate image on screen."""
     try:
         screen_width, screen_height = pyautogui.size()
         region = (0, 0, screen_width, screen_height // 2)
@@ -55,22 +88,18 @@ def locate_image(image, bottom_half=False, grayscale=True):
             region = (0, screen_height // 2, screen_width, screen_height // 2)
         return pyautogui.locateOnScreen(
             image, 
-            confidence=CONFIDENCE, 
+            confidence=Config.CONFIDENCE, 
             region=region,
-            grayscale=grayscale  # Faster detection
+            grayscale=grayscale
         )
     except pyautogui.ImageNotFoundException:
-        # Image not found - this is normal, not an error
         return None
     except Exception as e:
-        # Only log actual errors (not normal "not found" cases)
-        if DEBUG_MODE:
-            print(f"⚠️ Unexpected image detection error: {e}")
         stats['errors'] += 1
         return None
 
 def press_hotkey(key1, key2, delay=0.5):
-    """Press a hotkey combination (e.g., Shift+2)."""
+    """Press a hotkey combination."""
     try:
         keyboard.press(key1)
         keyboard.press(key2)
@@ -79,15 +108,12 @@ def press_hotkey(key1, key2, delay=0.5):
         keyboard.release(key1)
         time.sleep(delay)
     except Exception as e:
-        print(f"⚠️ Hotkey error: {e}")
         stats['errors'] += 1
 
 def check_inventory_full():
     """Check if inventory full popup appears."""
     stats['inventory_checks'] += 1
-    found = locate_image(f"{IMAGE_FOLDER}inventory_full.png") is not None
-    if found:
-        print(f"📦 Inventory full detected at position ({current_position['row']}, {current_position['col']})")
+    found = locate_image(f"{Config.IMAGE_FOLDER}inventory_full.png") is not None
     return found
 
 def get_elapsed_time():
@@ -108,42 +134,6 @@ def get_harvests_per_hour():
             return stats['total_harvests'] / elapsed_hours
     return 0
 
-def print_stats():
-    """Print current statistics."""
-    harvests_per_hour = get_harvests_per_hour()
-    print(f"\n📊 STATISTICS")
-    print(f"├─ Total Harvests: {stats['total_harvests']}")
-    print(f"├─ Total Sells: {stats['total_sells']}")
-    print(f"├─ Total Moves: {stats['total_moves']}")
-    print(f"├─ Runtime: {get_elapsed_time()}")
-    if stats['total_sells'] > 0:
-        avg_harvests = stats['total_harvests'] / stats['total_sells']
-        print(f"├─ Avg Harvests/Sell: {avg_harvests:.1f}")
-    if harvests_per_hour > 0:
-        print(f"├─ Harvests/Hour: {harvests_per_hour:.1f}")
-    if stats['errors'] > 0:
-        print(f"└─ Errors: {stats['errors']}")
-    else:
-        print(f"└─ No errors ✓")
-
-def save_stats_to_file():
-    """Save statistics to a log file."""
-    try:
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with open("harvest_bot_stats.log", "a") as f:
-            f.write(f"\n{'='*60}\n")
-            f.write(f"Session ended: {timestamp}\n")
-            f.write(f"Total Harvests: {stats['total_harvests']}\n")
-            f.write(f"Total Sells: {stats['total_sells']}\n")
-            f.write(f"Total Moves: {stats['total_moves']}\n")
-            f.write(f"Runtime: {get_elapsed_time()}\n")
-            f.write(f"Harvests/Hour: {get_harvests_per_hour():.1f}\n")
-            f.write(f"Errors: {stats['errors']}\n")
-            f.write(f"{'='*60}\n")
-        print(f"\n💾 Statistics saved to harvest_bot_stats.log")
-    except Exception as e:
-        print(f"⚠️ Could not save stats: {e}")
-
 # =========================
 # GAME ACTIONS
 # =========================
@@ -155,16 +145,17 @@ def press_key(key, hold=0.05):
         time.sleep(hold)
         keyboard.release(key)
     except Exception as e:
-        print(f"⚠️ Key press error: {e}")
         stats['errors'] += 1
 
 def move(direction, steps=1):
-    """Move in a direction for specified steps with inventory check."""
+    """Move in a direction with inventory check."""
     for _ in range(steps):
+        if not bot_running:
+            return
+        
         press_key(direction)
         stats['total_moves'] += 1
         
-        # Update position tracking
         if direction == 'w':
             current_position['row'] -= 1
         elif direction == 's':
@@ -174,181 +165,466 @@ def move(direction, steps=1):
         elif direction == 'd':
             current_position['col'] += 1
         
-        time.sleep(MOVE_DELAY)
+        time.sleep(Config.MOVE_DELAY)
         
-        # Check inventory after every move
         if check_inventory_full():
             sell_crops()
 
 def harvest():
     """Harvest current plot."""
-    for _ in range(HARVEST_COUNT):
+    for _ in range(Config.HARVEST_COUNT):
+        if not bot_running:
+            return
         press_key(Key.space)
-        time.sleep(HARVEST_DELAY)
+        time.sleep(Config.HARVEST_DELAY)
     stats['total_harvests'] += 1
     
-    # Check inventory after harvesting
     if check_inventory_full():
         sell_crops()
 
 def sell_crops():
     """Handle selling crops when inventory is full."""
-    print(f"\n⚠️ INVENTORY FULL at position ({current_position['row']}, {current_position['col']})")
     stats['total_sells'] += 1
     stats['last_sell_time'] = time.time()
     
-    # Store current position
+    # Log to GUI if available
+    if 'app' in globals():
+        app.log(f"📦 Inventory full at ({current_position['row']}, {current_position['col']}) - Selling...", "warning")
+    
     saved_position = current_position.copy()
     
-    # Open sell menu (Shift+3)
     press_hotkey(Key.shift, '3')
-    print("  ├─ Opening Sell menu...")
-    
-    # Press space to sell all
+    time.sleep(0.3)
     press_key(Key.space)
     time.sleep(0.5)
-    print("  ├─ Selling all crops...")
-    
-    # Return to garden (Shift+2)
     press_hotkey(Key.shift, '2')
-    print("  └─ Returning to Garden...")
-    time.sleep(SELL_RETURN_DELAY)
+    time.sleep(Config.SELL_RETURN_DELAY)
     
-    # Restore position tracking
     current_position.update(saved_position)
-    print(f"✅ Sale complete! Resuming at ({current_position['row']}, {current_position['col']})\n")
+    
+    if 'app' in globals():
+        app.log("✓ Crops sold! Resuming harvest...", "success")
 
 def return_to_start(last_row_index):
-    """Smartly return to starting position based on where we ended."""
-    print("🔄 Returning to start position...")
+    """Return to starting position."""
+    move('w', Config.GRID_SIZE - 1)
     
-    # Move up to top row first
-    move('w', GRID_SIZE - 1)
-    
-    # Only move left if last row was even (ended on right side)
     if last_row_index % 2 == 0:
-        move('a', GRID_SIZE - 1)
+        move('a', Config.GRID_SIZE - 1)
     
-    # Reset position tracking
     current_position['row'] = 0
     current_position['col'] = 0
-    
-    print("✅ Back at starting position!")
-
-# =========================
-# MAIN HARVEST LOOP
-# =========================
 
 def harvest_loop():
-    """Main harvesting loop with snake pattern."""
-    print("🌱 Starting snake harvest loop...")
-    
-    plots_harvested = 0
-    
-    # Reset position tracking
+    """Main harvesting loop."""
     current_position['row'] = 0
     current_position['col'] = 0
     
-    for row in range(GRID_SIZE):
+    for row in range(Config.GRID_SIZE):
+        if not bot_running:
+            return
+            
         current_position['row'] = row
         
-        if row % 2 == 0:  # Even row → left to right
-            for col in range(GRID_SIZE):
+        if row % 2 == 0:
+            for col in range(Config.GRID_SIZE):
+                if not bot_running:
+                    return
                 current_position['col'] = col
                 harvest()
-                plots_harvested += 1
-                
-                # Move right if not at the end of the row
-                if col < GRID_SIZE - 1:
+                if col < Config.GRID_SIZE - 1:
                     move('d')
-                    
-        else:  # Odd row → right to left
-            for col in range(GRID_SIZE - 1, -1, -1):
+        else:
+            for col in range(Config.GRID_SIZE - 1, -1, -1):
+                if not bot_running:
+                    return
                 current_position['col'] = col
                 harvest()
-                plots_harvested += 1
-                
-                # Move left if not at the start of the row
                 if col > 0:
                     move('a')
 
-        # Move down to next row (unless we're on the last row)
-        if row < GRID_SIZE - 1:
+        if row < Config.GRID_SIZE - 1:
             move('s')
     
-    print(f"✅ Harvested {plots_harvested} plots this cycle")
+    return_to_start(Config.GRID_SIZE - 1)
+
+# =========================
+# GUI APPLICATION
+# =========================
+
+class HarvestBotGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("🌱 Smart Garden Harvest Bot v3.0")
+        self.root.geometry("1200x750")
+        self.root.resizable(True, True)
+        
+        # Load config
+        Config.load()
+        
+        # Style
+        self.setup_style()
+        
+        # Main container with left and right sections
+        main_container = tk.Frame(self.root, bg=self.colors['bg_dark'])
+        main_container.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Left panel (controls, stats, config)
+        left_panel = tk.Frame(main_container, bg=self.colors['bg_dark'])
+        left_panel.pack(side=tk.LEFT, fill=tk.BOTH, expand=False, padx=(10, 5))
+        
+        # Right panel (activity log)
+        right_panel = tk.Frame(main_container, bg=self.colors['bg_dark'])
+        right_panel.pack(side=tk.RIGHT, fill=tk.BOTH, expand=True, padx=(5, 10))
+        
+        # Create UI in panels
+        self.create_header(left_panel)
+        self.create_control_panel(left_panel)
+        self.create_stats_panel(left_panel)
+        self.create_config_panel(left_panel)
+        self.create_log_panel(right_panel)
+        self.create_footer()
+        
+        # Update loop
+        self.update_ui()
+        
+    def setup_style(self):
+        """Setup custom styling."""
+        style = ttk.Style()
+        style.theme_use('clam')
+        
+        # Colors
+        bg_dark = "#1e1e2e"
+        bg_medium = "#2a2a3e"
+        bg_light = "#363650"
+        accent = "#89b4fa"
+        success = "#a6e3a1"
+        warning = "#fab387"
+        error = "#f38ba8"
+        text = "#cdd6f4"
+        
+        # Configure styles
+        style.configure("TFrame", background=bg_dark)
+        style.configure("Header.TLabel", background=bg_dark, foreground=accent, 
+                       font=("Segoe UI", 20, "bold"))
+        style.configure("Title.TLabel", background=bg_medium, foreground=text, 
+                       font=("Segoe UI", 11, "bold"))
+        style.configure("Stats.TLabel", background=bg_medium, foreground=text, 
+                       font=("Segoe UI", 10))
+        style.configure("TLabel", background=bg_dark, foreground=text, 
+                       font=("Segoe UI", 9))
+        style.configure("TButton", font=("Segoe UI", 10, "bold"))
+        
+        self.root.configure(bg=bg_dark)
+        self.colors = {
+            'bg_dark': bg_dark,
+            'bg_medium': bg_medium,
+            'bg_light': bg_light,
+            'accent': accent,
+            'success': success,
+            'warning': warning,
+            'error': error,
+            'text': text
+        }
+        
+    def create_header(self, parent):
+        """Create header section."""
+        header_frame = tk.Frame(parent, bg=self.colors['bg_dark'], height=60)
+        header_frame.pack(fill=tk.X, pady=(10, 10))
+        
+        title = ttk.Label(header_frame, text="🌱 Smart Garden Harvest Bot", 
+                         style="Header.TLabel")
+        title.pack(side=tk.LEFT)
+        
+        version = ttk.Label(header_frame, text="v3.0 GUI Edition", 
+                           style="TLabel")
+        version.pack(side=tk.LEFT, padx=(10, 0))
+        
+    def create_control_panel(self, parent):
+        """Create control buttons."""
+        control_frame = tk.Frame(parent, bg=self.colors['bg_dark'])
+        control_frame.pack(fill=tk.X, pady=10)
+        
+        self.start_button = tk.Button(control_frame, text="▶ START", 
+                                      command=self.start_bot,
+                                      bg=self.colors['success'], fg="black",
+                                      font=("Segoe UI", 11, "bold"),
+                                      width=12, height=2,
+                                      cursor="hand2")
+        self.start_button.pack(side=tk.LEFT, padx=3)
+        
+        self.stop_button = tk.Button(control_frame, text="⏹ STOP", 
+                                     command=self.stop_bot,
+                                     bg=self.colors['error'], fg="black",
+                                     font=("Segoe UI", 11, "bold"),
+                                     width=12, height=2,
+                                     state=tk.DISABLED,
+                                     cursor="hand2")
+        self.stop_button.pack(side=tk.LEFT, padx=3)
+        
+        self.reset_button = tk.Button(control_frame, text="🔄 RESET", 
+                                      command=self.reset_stats,
+                                      bg=self.colors['warning'], fg="black",
+                                      font=("Segoe UI", 11, "bold"),
+                                      width=12, height=2,
+                                      cursor="hand2")
+        self.reset_button.pack(side=tk.LEFT, padx=3)
+        
+        # Status below buttons
+        status_frame = tk.Frame(parent, bg=self.colors['bg_dark'])
+        status_frame.pack(fill=tk.X, pady=5)
+        
+        self.status_label = tk.Label(status_frame, text="● IDLE", 
+                                     bg=self.colors['bg_dark'],
+                                     fg=self.colors['text'],
+                                     font=("Segoe UI", 12, "bold"))
+        self.status_label.pack()
+        
+    def create_stats_panel(self, parent):
+        """Create statistics panel."""
+        stats_frame = tk.LabelFrame(parent, text="📊 Statistics", 
+                                   bg=self.colors['bg_medium'],
+                                   fg=self.colors['accent'],
+                                   font=("Segoe UI", 11, "bold"),
+                                   padx=10, pady=10)
+        stats_frame.pack(fill=tk.X, pady=10)
+        
+        # Create stats grid
+        stats_grid = tk.Frame(stats_frame, bg=self.colors['bg_medium'])
+        stats_grid.pack(fill=tk.X)
+        
+        self.stat_labels = {}
+        stats_config = [
+            ("Cycles", "cycles", 0, 0),
+            ("Total Harvests", "total_harvests", 0, 1),
+            ("Total Sells", "total_sells", 0, 2),
+            ("Total Moves", "total_moves", 1, 0),
+            ("Harvests/Hour", "rate", 1, 1),
+            ("Runtime", "runtime", 1, 2),
+            ("Position", "position", 2, 0),
+            ("Errors", "errors", 2, 1),
+            ("Status", "detailed_status", 2, 2),
+        ]
+        
+        for label_text, key, row, col in stats_config:
+            frame = tk.Frame(stats_grid, bg=self.colors['bg_light'], 
+                           relief=tk.RAISED, borderwidth=1)
+            frame.grid(row=row, column=col, padx=3, pady=3, sticky="ew")
+            
+            tk.Label(frame, text=label_text, 
+                    bg=self.colors['bg_light'],
+                    fg=self.colors['accent'],
+                    font=("Segoe UI", 8, "bold")).pack(pady=(3, 0))
+            
+            value_label = tk.Label(frame, text="0", 
+                                  bg=self.colors['bg_light'],
+                                  fg=self.colors['text'],
+                                  font=("Segoe UI", 14, "bold"))
+            value_label.pack(pady=(0, 3))
+            self.stat_labels[key] = value_label
+        
+        # Configure grid weights
+        for i in range(3):
+            stats_grid.columnconfigure(i, weight=1)
     
-    # Smart return to starting position
-    return_to_start(GRID_SIZE - 1)
+    def create_config_panel(self, parent):
+        """Create configuration panel."""
+        config_frame = tk.LabelFrame(parent, text="⚙️ Configuration", 
+                                    bg=self.colors['bg_medium'],
+                                    fg=self.colors['accent'],
+                                    font=("Segoe UI", 11, "bold"),
+                                    padx=10, pady=10)
+        config_frame.pack(fill=tk.X, pady=10)
+        
+        # Create config grid
+        configs = [
+            ("Grid Size:", "GRID_SIZE", 1, 20),
+            ("Harvest Count:", "HARVEST_COUNT", 1, 10),
+            ("Move Delay (s):", "MOVE_DELAY", 0.05, 1.0),
+            ("Harvest Delay (s):", "HARVEST_DELAY", 0.05, 1.0),
+            ("Loop Cooldown (s):", "LOOP_COOLDOWN", 0, 10),
+        ]
+        
+        self.config_vars = {}
+        
+        for i, (label_text, config_key, min_val, max_val) in enumerate(configs):
+            row = i // 2
+            col = (i % 2) * 2
+            
+            tk.Label(config_frame, text=label_text, 
+                    bg=self.colors['bg_medium'],
+                    fg=self.colors['text'],
+                    font=("Segoe UI", 9)).grid(row=row, column=col, 
+                                               padx=5, pady=5, sticky="w")
+            
+            var = tk.DoubleVar(value=getattr(Config, config_key))
+            self.config_vars[config_key] = var
+            
+            spinbox = tk.Spinbox(config_frame, from_=min_val, to=max_val, 
+                               textvariable=var, width=10,
+                               bg=self.colors['bg_light'],
+                               fg=self.colors['text'],
+                               buttonbackground=self.colors['accent'],
+                               increment=0.05 if isinstance(min_val, float) else 1)
+            spinbox.grid(row=row, column=col+1, padx=5, pady=5, sticky="w")
+        
+        save_btn = tk.Button(config_frame, text="💾 Save Config", 
+                           command=self.save_config,
+                           bg=self.colors['accent'], fg="black",
+                           font=("Segoe UI", 9, "bold"),
+                           cursor="hand2")
+        save_btn.grid(row=3, column=0, columnspan=2, pady=10, sticky="ew", padx=5)
+    
+    def create_log_panel(self, parent):
+        """Create log display panel."""
+        log_frame = tk.LabelFrame(parent, text="📝 Activity Log", 
+                                 bg=self.colors['bg_medium'],
+                                 fg=self.colors['accent'],
+                                 font=("Segoe UI", 11, "bold"),
+                                 padx=10, pady=10)
+        log_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Create text widget with scrollbar
+        self.log_text = scrolledtext.ScrolledText(log_frame, 
+                                                  bg=self.colors['bg_light'],
+                                                  fg=self.colors['text'],
+                                                  font=("Consolas", 9),
+                                                  wrap=tk.WORD,
+                                                  state=tk.NORMAL)
+        self.log_text.pack(fill=tk.BOTH, expand=True)
+        
+        # Configure tags for colored logs
+        self.log_text.tag_config("info", foreground=self.colors['accent'])
+        self.log_text.tag_config("success", foreground=self.colors['success'])
+        self.log_text.tag_config("warning", foreground=self.colors['warning'])
+        self.log_text.tag_config("error", foreground=self.colors['error'])
+        
+        self.log("Bot initialized. Ready to start!", "info")
+    
+    def log(self, message, tag="info"):
+        """Add message to log with auto-scroll."""
+        timestamp = datetime.now().strftime("%H:%M:%S")
+        self.log_text.insert(tk.END, f"[{timestamp}] {message}\n", tag)
+        self.log_text.see(tk.END)
+        self.root.update_idletasks()
+    
+    def create_footer(self):
+        """Create footer."""
+        footer = tk.Frame(self.root, bg=self.colors['bg_dark'], height=30)
+        footer.pack(fill=tk.X, padx=20, pady=(0, 10))
+        
+        tk.Label(footer, text="💡 Tip: Move mouse to top-left corner for emergency stop", 
+                bg=self.colors['bg_dark'],
+                fg=self.colors['text'],
+                font=("Segoe UI", 8)).pack(side=tk.LEFT)
+        
+    def update_ui(self):
+        """Update UI elements."""
+        # Update stats
+        self.stat_labels['cycles'].config(text=str(stats['cycles']))
+        self.stat_labels['total_harvests'].config(text=str(stats['total_harvests']))
+        self.stat_labels['total_sells'].config(text=str(stats['total_sells']))
+        self.stat_labels['total_moves'].config(text=str(stats['total_moves']))
+        self.stat_labels['errors'].config(text=str(stats['errors']))
+        self.stat_labels['runtime'].config(text=get_elapsed_time())
+        self.stat_labels['position'].config(
+            text=f"({current_position['row']}, {current_position['col']})"
+        )
+        
+        rate = get_harvests_per_hour()
+        self.stat_labels['rate'].config(text=f"{rate:.1f}")
+        
+        # Update status
+        if bot_running:
+            self.stat_labels['detailed_status'].config(text="Running", 
+                                                       fg=self.colors['success'])
+            self.status_label.config(text="● RUNNING", fg=self.colors['success'])
+        else:
+            self.stat_labels['detailed_status'].config(text="Idle", 
+                                                       fg=self.colors['warning'])
+            self.status_label.config(text="● IDLE", fg=self.colors['warning'])
+        
+        # Schedule next update
+        self.root.after(100, self.update_ui)
+        
+    def save_config(self):
+        """Save configuration."""
+        for key, var in self.config_vars.items():
+            setattr(Config, key, int(var.get()) if key in ['GRID_SIZE', 'HARVEST_COUNT'] 
+                   else float(var.get()))
+        Config.save()
+        self.log("Configuration saved!", "success")
+        messagebox.showinfo("Success", "Configuration saved successfully!")
+        
+    def reset_stats(self):
+        """Reset statistics."""
+        if messagebox.askyesno("Reset Stats", "Are you sure you want to reset all statistics?"):
+            stats['total_harvests'] = 0
+            stats['total_sells'] = 0
+            stats['total_moves'] = 0
+            stats['errors'] = 0
+            stats['inventory_checks'] = 0
+            stats['cycles'] = 0
+            stats['start_time'] = None
+            self.log("Statistics reset!", "warning")
+        
+    def start_bot(self):
+        """Start the bot."""
+        global bot_running
+        bot_running = True
+        stats['start_time'] = time.time()
+        
+        self.start_button.config(state=tk.DISABLED)
+        self.stop_button.config(state=tk.NORMAL)
+        
+        self.log("Bot started! Switch to game window...", "success")
+        
+        # Start bot in separate thread
+        bot_thread = threading.Thread(target=self.run_bot, daemon=True)
+        bot_thread.start()
+        
+    def stop_bot(self):
+        """Stop the bot."""
+        global bot_running
+        bot_running = False
+        
+        self.start_button.config(state=tk.NORMAL)
+        self.stop_button.config(state=tk.DISABLED)
+        
+        self.log("Bot stopped by user.", "error")
+        
+    def run_bot(self):
+        """Main bot loop."""
+        time.sleep(3)
+        self.log("Starting harvest loop...", "success")
+        
+        while bot_running:
+            try:
+                stats['cycles'] += 1
+                self.log(f"━━━ Cycle #{stats['cycles']} started ━━━", "info")
+                
+                harvest_loop()
+                
+                if bot_running:
+                    self.log(f"✓ Cycle #{stats['cycles']} complete!", "success")
+                    if Config.LOOP_COOLDOWN > 0:
+                        self.log(f"Waiting {Config.LOOP_COOLDOWN}s before next cycle...", "info")
+                    time.sleep(Config.LOOP_COOLDOWN)
+                    
+            except Exception as e:
+                self.log(f"ERROR: {e}", "error")
+                stats['errors'] += 1
+                time.sleep(2)
 
 # =========================
 # MAIN
 # =========================
 
 def main():
-    """Main bot entry point."""
-    print("=" * 60)
-    print("🤖 SMART GARDEN HARVEST BOT v2.5")
-    print("=" * 60)
-    print(f"⚙️  Configuration:")
-    print(f"   ├─ Grid Size: {GRID_SIZE}x{GRID_SIZE}")
-    print(f"   ├─ Harvests per plot: {HARVEST_COUNT}")
-    print(f"   ├─ Move Delay: {MOVE_DELAY}s")
-    print(f"   ├─ Harvest Delay: {HARVEST_DELAY}s")
-    print(f"   ├─ Loop Cooldown: {LOOP_COOLDOWN}s")
-    print(f"   ├─ Sell Return Delay: {SELL_RETURN_DELAY}s")
-    print(f"   ├─ Inventory Check: After every harvest & move")
-    print(f"   └─ Debug Mode: {DEBUG_MODE}")
-    print(f"\n💡 Tips:")
-    print(f"   • Move mouse to top-left corner to emergency stop")
-    print(f"   • Press Ctrl+C to stop gracefully")
-    print(f"   • Make sure you're at top-left plot before starting")
-    print(f"   • Stats will be saved to harvest_bot_stats.log")
-    print("\n⏳ Bot starting in 3 seconds... Switch to game window!")
-    
-    for i in range(3, 0, -1):
-        print(f"   {i}...", flush=True)
-        time.sleep(1)
-    
-    print("\n🚀 Bot started!\n")
-    stats['start_time'] = time.time()
-    
-    cycle = 0
-    try:
-        while True:
-            cycle += 1
-            timestamp = datetime.now().strftime("%H:%M:%S")
-            print(f"\n{'='*60}")
-            print(f"🔄 CYCLE #{cycle} | {timestamp}")
-            print(f"{'='*60}")
-            
-            harvest_loop()
-            
-            print_stats()
-            
-            print(f"\n💤 Waiting {LOOP_COOLDOWN}s before next cycle...")
-            time.sleep(LOOP_COOLDOWN)
-            
-    except KeyboardInterrupt:
-        print("\n\n" + "="*60)
-        print("🛑 Bot stopped by user")
-        print("="*60)
-        print_stats()
-        print(f"\n✅ Completed {cycle} full cycles")
-        print(f"⏱️  Total Runtime: {get_elapsed_time()}")
-        save_stats_to_file()
-        print("\n🌱 Thank you for using Garden Harvest Bot!")
-        print("="*60)
-    except Exception as e:
-        print(f"\n\n❌ CRITICAL ERROR: {e}")
-        print("Bot stopped due to error.")
-        import traceback
-        traceback.print_exc()
-        print_stats()
-        save_stats_to_file()
-    finally:
-        # Cleanup
-        print("\n🧹 Cleaning up...")
+    global app
+    root = tk.Tk()
+    app = HarvestBotGUI(root)
+    root.mainloop()
 
 if __name__ == "__main__":
     main()

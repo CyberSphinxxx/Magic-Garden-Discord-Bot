@@ -1,0 +1,9 @@
+{
+    "GRID_SIZE": 10,
+    "HARVEST_COUNT": 5,
+    "MOVE_DELAY": 0.15,
+    "HARVEST_DELAY": 0.1,
+    "LOOP_COOLDOWN": 2.0,
+    "SELL_RETURN_DELAY": 1.0,
+    "IMAGE_FOLDER": "images/"
+}
