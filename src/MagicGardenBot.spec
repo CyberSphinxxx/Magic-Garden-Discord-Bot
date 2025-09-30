@@ -2,6 +2,7 @@
 import sys
 import os
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs
+from PyInstaller.building.build_main import Analysis, PYZ, EXE, COLLECT
 
 block_cipher = None
 
@@ -14,7 +15,7 @@ a = Analysis(
     pathex=[],
     binaries=cv2_binaries,
     datas=[
-        ('images', 'src/images'),  # Include your images folder
+        ('images', 'images'),  # Include your images folder relative to .spec
     ] + cv2_datas,
     hiddenimports=[
         'cv2',
@@ -50,7 +51,7 @@ exe = EXE(
     upx=True,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,  # Set to True if you want to see console for debugging
+    console=False,  # GUI mode
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
@@ -58,4 +59,15 @@ exe = EXE(
     entitlements_file=None,
     icon='icon.ico',
     version='version.txt',
+)
+
+# COLLECT creates the "onedir" folder with all dependencies + exe
+coll = COLLECT(
+    exe,
+    a.binaries,
+    a.zipfiles,
+    a.datas,
+    strip=False,
+    upx=True,
+    name='MagicGardenBot'
 )
