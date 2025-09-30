@@ -255,7 +255,7 @@ def harvest_loop():
 class HarvestBotGUI:
     def __init__(self, root):
         self.root = root
-        self.root.title("🌱 Smart Garden Harvest Bot v3.0")
+        self.root.title("🌱 Magic Garden Bot")
         self.root.geometry("1200x750")
         self.root.resizable(True, True)
         
@@ -336,7 +336,7 @@ class HarvestBotGUI:
                          style="Header.TLabel")
         title.pack(side=tk.LEFT)
         
-        version = ttk.Label(header_frame, text="v3.0 GUI Edition", 
+        version = ttk.Label(header_frame, text="v2.0 GUI Edition", 
                            style="TLabel")
         version.pack(side=tk.LEFT, padx=(10, 0))
         
