@@ -1,5 +1,6 @@
 import pyautogui
 import time
+import cv2
 import numpy as np
 from pynput.keyboard import Controller, Key
 from datetime import datetime
@@ -7,29 +8,14 @@ import tkinter as tk
 from tkinter import ttk, scrolledtext, messagebox
 import threading
 import json
-import os
-import sys
+import sys, os
 
-# Check for OpenCV
-try:
-    import cv2
-    CV2_AVAILABLE = True
-except ImportError as e:
-    CV2_AVAILABLE = False
-    print(f"WARNING: OpenCV (cv2) not found: {e}")
-    print("Image detection features may not work properly.")
-
-# =========================
-# RESOURCE PATH HANDLING
-# =========================
 def resource_path(relative_path):
-    """Get absolute path to resource, works for dev and for PyInstaller."""
+    """ Get absolute path to resource (works for dev and PyInstaller .exe) """
     try:
-        # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
         base_path = os.path.abspath(".")
-    
     return os.path.join(base_path, relative_path)
 
 # =========================
@@ -43,7 +29,7 @@ class Config:
     HARVEST_DELAY = 0.1
     LOOP_COOLDOWN = 2
     SELL_RETURN_DELAY = 1.0
-    IMAGE_FOLDER = "src/images/"
+    IMAGE_FOLDER = resource_path("src/images/")
     
     @classmethod
     def save(cls):
@@ -57,20 +43,15 @@ class Config:
             'SELL_RETURN_DELAY': cls.SELL_RETURN_DELAY,
             'IMAGE_FOLDER': cls.IMAGE_FOLDER,
         }
-        try:
-            config_path = os.path.join(os.path.expanduser('~'), 'bot_config.json')
-            with open(config_path, 'w') as f:
-                json.dump(config_dict, f, indent=4)
-        except Exception as e:
-            print(f"Could not save config: {e}")
+        with open('bot_config.json', 'w') as f:
+            json.dump(config_dict, f, indent=4)
     
     @classmethod
     def load(cls):
         """Load config from file."""
         try:
-            config_path = os.path.join(os.path.expanduser('~'), 'bot_config.json')
-            if os.path.exists(config_path):
-                with open(config_path, 'r') as f:
+            if os.path.exists('bot_config.json'):
+                with open('bot_config.json', 'r') as f:
                     config_dict = json.load(f)
                     for key, value in config_dict.items():
                         setattr(cls, key, value)
@@ -108,22 +89,13 @@ bot_paused = False
 
 def locate_image(image, bottom_half=False, grayscale=True):
     """Locate image on screen."""
-    if not CV2_AVAILABLE:
-        print("ERROR: OpenCV not available. Cannot locate images.")
-        if 'app' in globals():
-            app.log("ERROR: OpenCV not available!", "error")
-        return None
-    
     try:
-        # Use resource_path to get correct path for images
-        image_path = resource_path(image)
-        
         screen_width, screen_height = pyautogui.size()
         region = (0, 0, screen_width, screen_height // 2)
         if bottom_half:
             region = (0, screen_height // 2, screen_width, screen_height // 2)
         return pyautogui.locateOnScreen(
-            image_path, 
+            image, 
             confidence=Config.CONFIDENCE, 
             region=region,
             grayscale=grayscale
@@ -132,7 +104,6 @@ def locate_image(image, bottom_half=False, grayscale=True):
         return None
     except Exception as e:
         stats['errors'] += 1
-        print(f"Error locating image {image}: {e}")
         return None
 
 def press_hotkey(key1, key2, delay=0.5):
@@ -148,9 +119,13 @@ def press_hotkey(key1, key2, delay=0.5):
         stats['errors'] += 1
 
 def check_inventory_full():
-    """Check if inventory full popup appears."""
     stats['inventory_checks'] += 1
-    found = locate_image(f"{Config.IMAGE_FOLDER}inventory_full.png") is not None
+    image_path = resource_path("src/images/inventory_full.png")
+    if not os.path.exists(image_path):
+        print(f"❌ Image not found: {image_path}")  # debug info
+        return False
+    found = locate_image(image_path) is not None
+    print(f"🔎 Inventory check: {found}")  # optional debug log
     return found
 
 def get_elapsed_time():
@@ -299,15 +274,6 @@ class HarvestBotGUI:
         # Load config
         Config.load()
         
-        # Check OpenCV availability
-        if not CV2_AVAILABLE:
-            messagebox.showerror(
-                "Missing Dependency",
-                "OpenCV (cv2) is not available!\n\n"
-                "Image detection will not work.\n"
-                "Please install: pip install opencv-python"
-            )
-        
         # Style
         self.setup_style()
         
@@ -382,7 +348,7 @@ class HarvestBotGUI:
                          style="Header.TLabel")
         title.pack(side=tk.LEFT)
         
-        version = ttk.Label(header_frame, text="v2.1 GUI Edition", 
+        version = ttk.Label(header_frame, text="v2.0 GUI Edition", 
                            style="TLabel")
         version.pack(side=tk.LEFT, padx=(10, 0))
         
@@ -546,10 +512,6 @@ class HarvestBotGUI:
         self.log_text.tag_config("error", foreground=self.colors['error'])
         
         self.log("Bot initialized. Ready to start!", "info")
-        if CV2_AVAILABLE:
-            self.log("✓ OpenCV loaded successfully", "success")
-        else:
-            self.log("✗ OpenCV NOT available - image detection disabled!", "error")
     
     def log(self, message, tag="info"):
         """Add message to log with auto-scroll."""
@@ -621,16 +583,6 @@ class HarvestBotGUI:
     def start_bot(self):
         """Start the bot."""
         global bot_running
-        
-        if not CV2_AVAILABLE:
-            messagebox.showerror(
-                "Cannot Start",
-                "OpenCV is not available!\n\n"
-                "The bot cannot detect inventory status without OpenCV.\n"
-                "Please install: pip install opencv-python"
-            )
-            return
-        
         bot_running = True
         stats['start_time'] = time.time()
         
