@@ -378,11 +378,11 @@ class HarvestBotGUI:
         header_frame = tk.Frame(parent, bg=self.colors['bg_dark'], height=60)
         header_frame.pack(fill=tk.X, pady=(10, 10))
         
-        title = ttk.Label(header_frame, text="🌱 Smart Garden Harvest Bot", 
+        title = ttk.Label(header_frame, text="🌱 Magic Garden Harvest Bot", 
                          style="Header.TLabel")
         title.pack(side=tk.LEFT)
         
-        version = ttk.Label(header_frame, text="v2.1 GUI Edition", 
+        version = ttk.Label(header_frame, text="GUI Edition",
                            style="TLabel")
         version.pack(side=tk.LEFT, padx=(10, 0))
         
@@ -563,7 +563,7 @@ class HarvestBotGUI:
         footer = tk.Frame(self.root, bg=self.colors['bg_dark'], height=30)
         footer.pack(fill=tk.X, padx=20, pady=(0, 10))
         
-        tk.Label(footer, text="💡 Tip: Move mouse to top-left corner for emergency stop", 
+        tk.Label(footer, text="Created by: John Lemar Gonzales", 
                 bg=self.colors['bg_dark'],
                 fg=self.colors['text'],
                 font=("Segoe UI", 8)).pack(side=tk.LEFT)
