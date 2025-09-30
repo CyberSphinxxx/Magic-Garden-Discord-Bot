@@ -25,8 +25,7 @@ jobs:
 
       - name: Build exe
         run: |
-          pyinstaller --onefile src/main.py
-        # Change src/main.py to your entrypoint
+          pyinstaller --onefile src/MagicGardenBot.py
 
       - name: Package release files
         run: |
