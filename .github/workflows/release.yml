@@ -1,0 +1,60 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"   # Trigger only when pushing tags like v1.0.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install --upgrade pip
+          pip install pyinstaller
+
+      - name: Build exe
+        run: |
+          pyinstaller --onefile src/main.py
+        # Change src/main.py to your entrypoint
+
+      - name: Package release files
+        run: |
+          mkdir release
+          copy dist\*.exe release\
+          copy README.md release\
+          copy config.example.json release\   # Add config files if you have them
+          powershell Compress-Archive -Path release\* -DestinationPath MagicGardenBot.zip
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MagicGardenBot
+          path: MagicGardenBot.zip
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: MagicGardenBot
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: "MagicGardenBot.zip"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
