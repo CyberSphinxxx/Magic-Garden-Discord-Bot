@@ -6,7 +6,7 @@ on:
       - main   # Trigger release when code is pushed to main
 
 permissions:
-  contents: write   # ✅ allow creating releases
+  contents: write   # allow creating releases
 
 jobs:
   build:
@@ -35,26 +35,18 @@ jobs:
       - name: Build exe with spec file
         run: |
           cd src
-          python -m PyInstaller MagicGardenBot.spec --clean
+          python -m PyInstaller MagicGardenBot.spec --clean --onedir --windowed
 
       - name: Verify build output
         run: |
           dir src\dist
           echo "Build complete"
 
-      - name: Package release files
-        run: |
-          mkdir release
-          copy src\dist\MagicGardenBot.exe release\
-          copy README.md release\ 2>nul || echo "README.md not found, skipping"
-          echo "Creating release package..."
-          powershell Compress-Archive -Path release\* -DestinationPath MagicGardenBot.zip -Force
-
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: MagicGardenBot
-          path: MagicGardenBot.zip
+          path: src\dist\MagicGardenBot\MagicGardenBot.exe   # direct .exe
 
   release:
     needs: build
@@ -64,7 +56,7 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # fetch all history + tags
+          fetch-depth: 0
 
       - name: Download artifact
         uses: actions/download-artifact@v4
@@ -96,14 +88,13 @@ jobs:
         with:
           tag_name: ${{ env.new_tag }}
           name: Release ${{ env.new_tag }}
-          files: MagicGardenBot.zip
+          files: src/dist/MagicGardenBot/MagicGardenBot.exe  # direct exe
           body: |
             ## Magic Garden Bot Release
 
             ### Installation
-            1. Download `MagicGardenBot.zip`
-            2. Extract the zip file
-            3. Run `MagicGardenBot.exe`
+            1. Download `MagicGardenBot.exe`
+            2. Run the executable directly
 
             ### Requirements
             - Windows 10/11
