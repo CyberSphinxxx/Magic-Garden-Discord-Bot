@@ -46,7 +46,6 @@ jobs:
           mkdir release
           copy src\dist\MagicGardenBot.exe release\
           copy README.md release\ 2>nul || echo "README.md not found, skipping"
-          copy src\config.example.json release\ 2>nul || echo "config.example.json not found, skipping"
           echo "Creating release package..."
           powershell Compress-Archive -Path release\* -DestinationPath MagicGardenBot.zip -Force
 
