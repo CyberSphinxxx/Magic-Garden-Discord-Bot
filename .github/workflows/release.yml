@@ -31,7 +31,10 @@ jobs:
         run: pip install pyinstaller
 
       - name: Build executable
-        run: pyinstaller --onefile --windowed --icon=src/bot_icon.ico --add-data "src/images;images" --name="MagicGardenBot" src/MagicGardenBot.py
+        run: |
+          $env:PYTHONPATH = "${{ github.workspace }}"
+          pyinstaller --onefile --windowed --icon=src/bot_icon.ico --add-data "src/images;images" --name="MagicGardenBot" src/MagicGardenBot.py
+        shell: pwsh
 
       - name: Get next version tag
         id: get_version
