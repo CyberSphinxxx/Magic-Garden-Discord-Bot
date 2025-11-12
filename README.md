@@ -2,7 +2,7 @@
 
 An automated Python bot with a beautiful GUI that harvests a 10x10 grid of plots in a snake pattern, automatically sells crops when inventory is full, and tracks comprehensive statistics in real-time.
 
-![Version](https://img.shields.io/badge/version-2.1.8-blue)
+![Version](https://img.shields.io/badge/version-2.1.11-blue)
 ![Python](https://img.shields.io/badge/python-3.8+-green)
 ![License](https://img.shields.io/badge/license-MIT-orange)
 
