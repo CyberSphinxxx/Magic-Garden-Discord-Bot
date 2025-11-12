@@ -1,0 +1,4 @@
+pyautogui
+opencv-python
+numpy
+pynput
