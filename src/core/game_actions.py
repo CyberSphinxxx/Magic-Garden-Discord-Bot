@@ -56,7 +56,7 @@ def harvest(logger=print):
     for _ in range(Config.HARVEST_COUNT):
         if not state.bot_running:
             return
-        if automation.check_harvest_button() is False:
+        if not automation.check_harvest_button():
             return
         if automation.check_inventory_full():
             sell_crops(logger)
