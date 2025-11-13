@@ -56,12 +56,15 @@ def harvest(logger=print):
     for _ in range(Config.HARVEST_COUNT):
         if not state.bot_running:
             return
+        if automation.check_harvest_button() is False:
+            return
+        if automation.check_inventory_full():
+            sell_crops(logger)
+            automation.press_key(Key.space)
+
         automation.press_key(Key.space)
         time.sleep(Config.HARVEST_DELAY)
     state.stats['total_harvests'] += 1
-    
-    if automation.check_inventory_full():
-        sell_crops(logger)
 
 def return_to_start(logger=print):
     """Return to the starting position (0, 0)."""
