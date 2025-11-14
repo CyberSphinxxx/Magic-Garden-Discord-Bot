@@ -156,14 +156,32 @@ Contributions, issues, and feature requests are welcome! If you're a developer, 
 ### Project Structure
 ```
 MAGIC-GARDEN-DISCORD-BOT/
+├── .github/
+│   └── workflows/
+│       └── release.yml
 ├── src/
+│   ├── core/
+│   │   ├── __init__.py
+│   │   ├── automation.py
+│   │   ├── config.py
+│   │   ├── game_actions.py
+│   │   └── state.py
+│   ├── gui/
+│   │   ├── __init__.py
+│   │   └── main_window.py
 │   ├── images/
-│   │   ├── inventory_full.png     # Required screenshot
-│   │   └── bot_icon.ico           # Bot icon
-│   ├── MagicGardenBot.py          # Main GUI application
-│   └── ...
-├── requirements.txt               # Python dependencies
-└── README.md                      # This file
+│   │   ├── garden_button.png
+│   │   ├── harvest_button.png
+│   │   ├── inventory_full.png
+│   │   ├── sell_all_button.png
+│   │   └── sell_button.png
+│   ├── MagicGardenBot.py
+│   ├── bot_icon.ico
+│   └── version.txt
+├── .gitignore
+├── LICENSE
+├── README.md
+└── requirements.txt
 ```
 
 ### Building the Executable
