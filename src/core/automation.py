@@ -66,6 +66,13 @@ def check_inventory_full():
     image_path = os.path.join(Config.IMAGE_FOLDER, "inventory_full.png")
     return locate_image(image_path, confidence=Config.CONFIDENCE) is not None
 
+
+def check_harvest_button():
+    """Check if the harvest button appears."""
+    image_path = os.path.join(Config.IMAGE_FOLDER, "harvest_button.png")
+    return locate_image(image_path, confidence=Config.CONFIDENCE) is not None
+
+
 def press_key(key, hold=0.05):
     """Press and release a single key."""
     try:
