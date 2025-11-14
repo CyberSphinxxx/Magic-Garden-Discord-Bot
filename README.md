@@ -8,6 +8,9 @@ An automated Python bot with a beautiful GUI that harvests a 10x10 grid of plots
 
 ---
 
+https://github.com/user-attachments/assets/b64a9afc-553b-466b-aa36-d56f2001f218
+
+
 ## 🚀 Quick Start Guide (For Everyone!)
 
 This is the easiest way to get the bot running, no programming skills required!
