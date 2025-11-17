@@ -12,7 +12,7 @@ class Config:
     HARVEST_DELAY = 0.1
     LOOP_COOLDOWN = 2
     SELL_RETURN_DELAY = 1.0
-    IMAGE_FOLDER = "src/images/"
+    IMAGE_FOLDER = "images/"
     
     @classmethod
     def save(cls):
