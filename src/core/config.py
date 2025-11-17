@@ -24,7 +24,6 @@ class Config:
             'HARVEST_DELAY': cls.HARVEST_DELAY,
             'LOOP_COOLDOWN': cls.LOOP_COOLDOWN,
             'SELL_RETURN_DELAY': cls.SELL_RETURN_DELAY,
-            'IMAGE_FOLDER': cls.IMAGE_FOLDER,
         }
         try:
             # Save config in a user-specific, persistent location

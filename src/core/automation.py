@@ -24,12 +24,20 @@ except ImportError as e:
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller."""
+    # Path for development (running from source)
+    dev_path = os.path.join('src', relative_path)
+    
+    if os.path.exists(dev_path):
+        return dev_path
+
+    # Path for PyInstaller bundle
     try:
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except AttributeError:
+        # Fallback for when not running in a bundle
         base_path = os.path.abspath(".")
-    
+
     return os.path.join(base_path, relative_path)
 
 def locate_image(image, confidence, bottom_half=False, grayscale=True):
