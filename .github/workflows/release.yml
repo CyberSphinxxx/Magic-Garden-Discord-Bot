@@ -33,7 +33,7 @@ jobs:
       - name: Build executable
         run: |
           $env:PYTHONPATH = "${{ github.workspace }}"
-          pyinstaller --onefile --windowed --icon=src/bot_icon.ico --add-data "src/images;images" --name="MagicGardenBot" src/MagicGardenBot.py
+          pyinstaller --onefile --windowed --icon=src/bot_icon.ico --add-data "src/images;images" --name="MagicGardenBot" main.py
         shell: pwsh
 
       - name: Get next version tag
