@@ -56,8 +56,10 @@ def harvest(logger=print):
     for _ in range(Config.HARVEST_COUNT):
         if not state.bot_running:
             return
-        if not automation.check_harvest_button():
-            return
+        # Simplified harvesting by removing the image check, as requested.
+        # The bot will now always press spacebar to harvest.
+        # if not automation.check_harvest_button():
+        #     return
         if automation.check_inventory_full():
             sell_crops(logger)
             automation.press_key(Key.space)

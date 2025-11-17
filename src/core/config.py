@@ -42,6 +42,8 @@ class Config:
                 with open(config_path, 'r') as f:
                     config_dict = json.load(f)
                     for key, value in config_dict.items():
+                        if key == 'IMAGE_FOLDER':
+                            continue
                         setattr(cls, key, value)
         except Exception as e:
             print(f"Could not load config: {e}")
