@@ -4,6 +4,7 @@ from pynput.keyboard import Key
 from . import state
 from . import automation
 from .config import Config
+import os
 
 def sell_crops(logger=print):
     """Handle selling crops when inventory is full."""
@@ -19,7 +20,29 @@ def sell_crops(logger=print):
     time.sleep(0.3)
     automation.press_key(Key.space)          # Press "Sell All"
     time.sleep(0.5)
-    automation.press_hotkey(Key.shift, '2')  # Return to garden
+ 
+    go_to_journal_img = os.path.join(Config.IMAGE_FOLDER, "go_to_journal.png")
+    journal_btn_loc = automation.locate_image(go_to_journal_img, confidence=Config.CONFIDENCE)
+    
+    if journal_btn_loc:
+        logger("📘 Journal interruption detected! Handling...", "info")
+        automation.click_region(journal_btn_loc)
+        time.sleep(1.0) # Wait for journal to open
+        
+        log_items_img = os.path.join(Config.IMAGE_FOLDER, "log_new_items_in_journal.png")
+        if automation.locate_image(log_items_img, confidence=Config.CONFIDENCE):
+            logger("📝 Logging new items...", "info")
+            automation.press_key(Key.space)
+        
+        time.sleep(5.0)
+        automation.press_key(Key.esc)
+        time.sleep(0.5)
+        
+        logger("🔄 Reselling...", "info")
+        automation.press_key(Key.space)
+        time.sleep(0.5)
+
+    automation.press_hotkey(Key.shift, '2')
     time.sleep(Config.SELL_RETURN_DELAY)
     
     # Restore position

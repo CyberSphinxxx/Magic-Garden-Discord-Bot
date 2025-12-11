@@ -32,6 +32,19 @@ def resource_path(relative_path):
     
     return os.path.join(base_path, relative_path)
 
+
+def click_region(region):
+    """Click on the center of a given region (left, top, width, height)."""
+    if region is None:
+        return
+    
+    try:
+        x, y = pyautogui.center(region)
+        pyautogui.click(x, y)
+    except Exception as e:
+        state.stats['errors'] += 1
+        print(f"Error clicking region: {e}")
+
 def locate_image(image, confidence, bottom_half=False, grayscale=True):
     """Locate an image on the screen."""
     if not CV2_AVAILABLE:
