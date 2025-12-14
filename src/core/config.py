@@ -5,7 +5,8 @@ class Config:
     """
     Handles loading and saving of the bot's configuration.
     """
-    GRID_SIZE = 10
+    ROWS = 10
+    COLUMNS = 10
     HARVEST_COUNT = 5
     CONFIDENCE = 0.8
     MOVE_DELAY = 0.15
@@ -18,7 +19,8 @@ class Config:
     def save(cls):
         """Save config to a JSON file in the user's home directory."""
         config_dict = {
-            'GRID_SIZE': cls.GRID_SIZE,
+            'ROWS': cls.ROWS,
+            'COLUMNS': cls.COLUMNS,
             'HARVEST_COUNT': cls.HARVEST_COUNT,
             'MOVE_DELAY': cls.MOVE_DELAY,
             'HARVEST_DELAY': cls.HARVEST_DELAY,
