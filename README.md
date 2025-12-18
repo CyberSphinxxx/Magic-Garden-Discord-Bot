@@ -11,6 +11,10 @@ An automated Python bot with a beautiful GUI that harvests a 10x10 grid of plots
 https://github.com/user-attachments/assets/b64a9afc-553b-466b-aa36-d56f2001f218
 
 
+## 🔒 Important Notes for Windows Build
+
+To achieve a portable-executable format, the application is packaged with PyInstaller into an EXE. Some antivirus engines (including Windows Defender) might report the packaged executable as a trojan, because PyInstaller has been used by others to package malicious Python code in the past. These reports can be safely ignored. If you absolutely do not trust the executable, you'll have to install Python yourself and run everything from source.
+
 ## 🚀 Quick Start Guide (For Everyone!)
 
 This is the easiest way to get the bot running, no programming skills required!
