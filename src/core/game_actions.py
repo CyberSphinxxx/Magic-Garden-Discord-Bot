@@ -4,6 +4,7 @@ from pynput.keyboard import Key
 from . import state
 from . import automation
 from .config import Config
+import os
 
 def sell_crops(logger=print):
     """Handle selling crops when inventory is full."""
@@ -19,7 +20,34 @@ def sell_crops(logger=print):
     time.sleep(0.3)
     automation.press_key(Key.space)          # Press "Sell All"
     time.sleep(0.5)
-    automation.press_hotkey(Key.shift, '2')  # Return to garden
+ 
+    go_to_journal_img = os.path.join(Config.IMAGE_FOLDER, "go_to_journal.png")
+    journal_btn_loc = automation.locate_image(go_to_journal_img, confidence=Config.CONFIDENCE)
+    
+    if journal_btn_loc:
+        logger("📘 Journal interruption detected! Handling...", "info")
+        automation.click_region(journal_btn_loc)
+        time.sleep(1.0) # Wait for journal to open
+        
+        log_items_img = os.path.join(Config.IMAGE_FOLDER, "log_new_items_in_journal.png")
+        if automation.locate_image(log_items_img, confidence=Config.CONFIDENCE):
+            logger("📝 Logging new items...", "info")
+            automation.press_key(Key.space)
+        
+        time.sleep(5.0)
+        automation.press_key(Key.esc)
+        time.sleep(0.5)
+        
+        logger("🔄 Reselling...", "info")
+        
+        # Use hotkey instead of clicking image
+        automation.press_hotkey(Key.shift, '3')
+        time.sleep(0.3)
+
+        automation.press_key(Key.space)
+        time.sleep(0.5)
+
+    automation.press_hotkey(Key.shift, '2')
     time.sleep(Config.SELL_RETURN_DELAY)
     
     # Restore position
@@ -70,7 +98,7 @@ def harvest(logger=print):
 
 def return_to_start(logger=print):
     """Return to the starting position (0, 0)."""
-    last_row_index = Config.GRID_SIZE - 1
+    last_row_index = Config.ROWS - 1
     
     # Move up to the first row
     if state.current_position['row'] > 0:
@@ -88,22 +116,22 @@ def harvest_loop(logger=print):
     state.current_position['row'] = 0
     state.current_position['col'] = 0
     
-    for row in range(Config.GRID_SIZE):
+    for row in range(Config.ROWS):
         if not state.bot_running: return
             
         state.current_position['row'] = row
         
         # Move right on even rows
         if row % 2 == 0:
-            for col in range(Config.GRID_SIZE):
+            for col in range(Config.COLUMNS):
                 if not state.bot_running: return
                 state.current_position['col'] = col
                 harvest(logger)
-                if col < Config.GRID_SIZE - 1:
+                if col < Config.COLUMNS - 1:
                     move('d', logger=logger)
         # Move left on odd rows
         else:
-            for col in range(Config.GRID_SIZE - 1, -1, -1):
+            for col in range(Config.COLUMNS - 1, -1, -1):
                 if not state.bot_running: return
                 state.current_position['col'] = col
                 harvest(logger)
@@ -111,7 +139,7 @@ def harvest_loop(logger=print):
                     move('a', logger=logger)
 
         # Move down to the next row
-        if row < Config.GRID_SIZE - 1:
+        if row < Config.ROWS - 1:
             move('s', logger=logger)
     
     # Return to start after finishing the grid

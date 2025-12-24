@@ -119,7 +119,7 @@ class HarvestBotGUI:
         
         self.config_vars = {}
         configs = [
-            ("Grid Size:", "GRID_SIZE", 1, 20), ("Harvest Count:", "HARVEST_COUNT", 1, 10),
+            ("Columns:", "COLUMNS", 1, 20), ("Harvest Count:", "HARVEST_COUNT", 1, 10),
             ("Move Delay (s):", "MOVE_DELAY", 0.05, 1.0), ("Harvest Delay (s):", "HARVEST_DELAY", 0.05, 1.0),
             ("Loop Cooldown (s):", "LOOP_COOLDOWN", 0, 10),
         ]

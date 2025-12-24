@@ -35,6 +35,7 @@ The bot comes with a default `inventory_full.png` image located in the `src/imag
 **Most users will NOT need to do this step.** The provided image should work for common game setups.
 
 **However, if the bot isn't detecting your inventory correctly:**
+
 1.  In the game, make your inventory full so the "Inventory Full" pop-up appears.
 2.  Press **`Windows Key + Shift + S`** to open the Snipping Tool.
 3.  Drag a box and capture **only the pop-up message**.
@@ -61,7 +62,7 @@ If you want to run the Python script directly or modify the code, follow these s
 ### Step 1: Get the Code (Fork & Clone)
 
 1.  **Fork the Repository**: Click the **"Fork"** button at the top-right of this page. This creates your own copy of the project under your GitHub account.
-2.  **Clone Your Fork**: Click the green **"< > Code"** button on *your forked repository page*, copy the URL, and run the following command in your terminal (like Command Prompt or PowerShell):
+2.  **Clone Your Fork**: Click the green **"< > Code"** button on _your forked repository page_, copy the URL, and run the following command in your terminal (like Command Prompt or PowerShell):
     ```bash
     git clone <your-copied-url>
     ```
@@ -101,19 +102,21 @@ The bot's GUI should appear, and you can start it just like in the Quick Start G
 ## ✨ Features
 
 ### Core Functionality
--  **Snake Pattern Harvesting** - Efficiently covers all 100 plots
--  **Auto-Sell System** - Detects full inventory and sells automatically
--  **Smart Return** - Intelligently returns to starting position
--  **Hotkey Integration** - Fast navigation using keyboard shortcuts
--  **Continuous Loop** - Runs indefinitely until manually stopped
+
+- **Snake Pattern Harvesting** - Efficiently covers all 100 plots
+- **Auto-Sell System** - Detects full inventory and sells automatically
+- **Smart Return** - Intelligently returns to starting position
+- **Hotkey Integration** - Fast navigation using keyboard shortcuts
+- **Continuous Loop** - Runs indefinitely until manually stopped
 
 ### GUI Features
--  **Beautiful Dark Theme** - Modern, eye-friendly interface
--  **Real-time Statistics** - 9 live metrics updated every 100ms
--  **Activity Log** - Color-coded messages with auto-scroll
--  **Configurable Settings** - Adjust all parameters on-the-fly
--  **Persistent Config** - Settings saved between sessions
--  **Visual Status Indicators** - Clear running/idle states
+
+- **Beautiful Dark Theme** - Modern, eye-friendly interface
+- **Real-time Statistics** - 9 live metrics updated every 100ms
+- **Activity Log** - Color-coded messages with auto-scroll
+- **Configurable Settings** - Adjust all parameters on-the-fly
+- **Persistent Config** - Settings saved between sessions
+- **Visual Status Indicators** - Clear running/idle states
 
 ---
 
@@ -121,27 +124,27 @@ The bot's GUI should appear, and you can start it just like in the Quick Start G
 
 All settings can be adjusted directly in the GUI. They are saved automatically in a `bot_config.json` file in your user home directory.
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `GRID_SIZE` | Size of the garden grid (e.g., 10 for a 10x10 grid) | 10 |
-| `HARVEST_COUNT` | How many times to press the harvest key on each plot | 5 |
-| `MOVE_DELAY` | Delay between each step (in seconds). Increase if movement is choppy. | 0.15 |
-| `HARVEST_DELAY` | Delay between each harvest action (in seconds). | 0.1 |
-| `LOOP_COOLDOWN` | How long to wait after completing a full harvest cycle (in seconds). | 2 |
+| Setting         | Description                                                           | Default |
+| --------------- | --------------------------------------------------------------------- | ------- |
+| `GRID_SIZE`     | Size of the garden grid (e.g., 10 for a 10x10 grid)                   | 10      |
+| `HARVEST_COUNT` | How many times to press the harvest key on each plot                  | 5       |
+| `MOVE_DELAY`    | Delay between each step (in seconds). Increase if movement is choppy. | 0.15    |
+| `HARVEST_DELAY` | Delay between each harvest action (in seconds).                       | 0.1     |
+| `LOOP_COOLDOWN` | How long to wait after completing a full harvest cycle (in seconds).  | 2       |
 
 ---
 
 ## ⚠️ Troubleshooting
 
--   **Bot Not Detecting "Inventory Full"**:
-    *   Retake your `inventory_full.png` screenshot. Make sure it's a clear, tight crop of the pop-up.
-    *   Ensure the pop-up in-game looks exactly the same as it did when you took the screenshot.
--   **Movement is Too Fast/Slow**:
-    *   Adjust the `MOVE_DELAY` and `HARVEST_DELAY` settings in the GUI.
-    *   Click "💾 Save Config" to apply the changes.
--   **Bot Stops Unexpectedly**:
-    *   Check the Activity Log in the GUI for any red error messages.
-    *   Make sure the game window remains the active, focused window.
+- **Bot Not Detecting "Inventory Full"**:
+  - Retake your `inventory_full.png` screenshot. Make sure it's a clear, tight crop of the pop-up.
+  - Ensure the pop-up in-game looks exactly the same as it did when you took the screenshot.
+- **Movement is Too Fast/Slow**:
+  - Adjust the `MOVE_DELAY` and `HARVEST_DELAY` settings in the GUI.
+  - Click "💾 Save Config" to apply the changes.
+- **Bot Stops Unexpectedly**:
+  - Check the Activity Log in the GUI for any red error messages.
+  - Make sure the game window remains the active, focused window.
 
 ---
 
@@ -158,6 +161,7 @@ Contributions, issues, and feature requests are welcome! If you're a developer, 
 ## 👨‍💻 For Developers
 
 ### Project Structure
+
 ```
 MAGIC-GARDEN-DISCORD-BOT/
 ├── .github/
@@ -199,7 +203,7 @@ If you want to bundle the application into a `.exe` file yourself, you'll need `
 2.  **Build the Executable**:
     Run this command from the root folder of the project:
     ```bash
-    pyinstaller --onefile --windowed --icon=src/bot_icon.ico --name="MagicGardenBot" src/MagicGardenBot.py
+    pyinstaller --onefile --windowed --icon=src/bot_icon.ico --add-data "src/images;images" --name="MagicGardenBot" main.py
     ```
     The final `.exe` will be located in the `dist` folder.
 
