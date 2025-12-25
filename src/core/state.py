@@ -9,7 +9,8 @@ stats = {
     'last_sell_time': None,
     'errors': 0,
     'inventory_checks': 0,
-    'cycles': 0
+    'cycles': 0,
+    'cycle_times': []
 }
 
 # Real-time position tracking
