@@ -1,6 +1,6 @@
 import sys
 import os
-import tkinter as tk
+import customtkinter as ctk
 
 
 
@@ -14,15 +14,27 @@ def main():
     # Load the configuration at the very start
     Config.load()
 
+    # Set up customtkinter appearance
+    ctk.set_appearance_mode("Dark")
+    ctk.set_default_color_theme("blue")
+
     # Set up the main GUI window
-    root = tk.Tk()
+    root = ctk.CTk()
     
     # The HarvestBotGUI class now handles all application logic.
     # We just need to create an instance of it.
     app = HarvestBotGUI(root)
 
     # Start the application's main event loop
-    root.mainloop()
+    try:
+        root.mainloop()
+    except KeyboardInterrupt:
+        print("\nApplication closed.")
+        root.destroy()
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    except KeyboardInterrupt:
+        pass  # Silent exit on Ctrl+C
+
