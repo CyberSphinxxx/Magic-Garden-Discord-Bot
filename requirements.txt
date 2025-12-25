@@ -2,3 +2,4 @@ pyautogui
 opencv-python
 numpy
 pynput
+customtkinter
