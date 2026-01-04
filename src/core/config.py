@@ -8,6 +8,7 @@ class Config:
     GRID_SIZE = 10
     HARVEST_COUNT = 5
     CONFIDENCE = 0.8
+    INVENTORY_CONFIDENCE = 0.6  # Lower threshold for inventory detection to handle GPU color variations (AMD vs NVIDIA)
     MOVE_DELAY = 0.15
     HARVEST_DELAY = 0.1
     LOOP_COOLDOWN = 2
