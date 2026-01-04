@@ -24,13 +24,38 @@ except ImportError as e:
 
 def resource_path(relative_path):
     """Get absolute path to resource, works for dev and for PyInstaller."""
-    try:
+    if hasattr(sys, '_MEIPASS'):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
-        base_path = sys._MEIPASS
-    except AttributeError:
-        base_path = os.path.abspath(".")
+        return os.path.join(sys._MEIPASS, relative_path)
     
-    return os.path.join(base_path, relative_path)
+    # Development mode
+    base_path = os.path.abspath(".")
+    
+    # Check direct path (e.g. if images/ is in root)
+    path = os.path.join(base_path, relative_path)
+    if os.path.exists(path):
+        return path
+        
+    # Check inside src/ (e.g. if images/ is in src/images/). 
+    # This handles the case where we run from root but images are in src.
+    path_src = os.path.join(base_path, "src", relative_path)
+    if os.path.exists(path_src):
+        return path_src
+        
+    return path
+
+
+def click_region(region):
+    """Click on the center of a given region (left, top, width, height)."""
+    if region is None:
+        return
+    
+    try:
+        x, y = pyautogui.center(region)
+        pyautogui.click(x, y)
+    except Exception as e:
+        state.stats['errors'] += 1
+        print(f"Error clicking region: {e}")
 
 def locate_image(image, confidence, bottom_half=False, grayscale=True):
     """
