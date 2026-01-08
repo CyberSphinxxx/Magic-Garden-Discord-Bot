@@ -64,10 +64,10 @@ class GuideWindow(ctk.CTkToplevel):
             text_color=self.colors['text_muted']
         ).pack(anchor="w", padx=15, pady=(20, 10))
         
-        # Navigation buttons (clean text, no emojis)
         nav_items = [
             ("about", "About"),
             ("quick_start", "Quick Start"),
+            ("auto_shop", "Auto Shop"),
             ("settings", "Settings"),
             ("safety", "Safety"),
             ("faq", "FAQ"),
@@ -121,6 +121,10 @@ class GuideWindow(ctk.CTkToplevel):
         # FAQ Page
         self.pages["faq"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
         self._populate_faq(self.pages["faq"])
+        
+        # Auto Shop Page
+        self.pages["auto_shop"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        self._populate_auto_shop(self.pages["auto_shop"])
     
     def select_frame(self, name):
         """Switch to the selected page and highlight the nav button."""
@@ -324,6 +328,96 @@ class GuideWindow(ctk.CTkToplevel):
                 anchor="w",
                 wraplength=400
             ).pack(anchor="w", padx=(15, 0))
+    
+    def _populate_auto_shop(self, parent):
+        """Content for Auto Shop page with Shop Mode instructions."""
+        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+        scroll.pack(fill="both", expand=True)
+        
+        # Page Title
+        ctk.CTkLabel(
+            scroll,
+            text="Auto Shop Guide",
+            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
+            text_color=self.colors['text_primary']
+        ).pack(anchor="w", pady=(0, 15))
+        
+        # Description
+        ctk.CTkLabel(
+            scroll,
+            text="The Auto Shop feature automatically purchases seeds from the in-game shop at regular intervals.",
+            font=ctk.CTkFont(family="Segoe UI", size=11),
+            text_color=self.colors['text_secondary'],
+            wraplength=400,
+            justify="left"
+        ).pack(anchor="w", pady=(0, 15))
+        
+        # How to Use section
+        ctk.CTkLabel(
+            scroll,
+            text="How to Use",
+            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            text_color=self.colors['text_primary']
+        ).pack(anchor="w", pady=(10, 5))
+        
+        steps = [
+            ("1", "Go to the 'Shop' tab in the sidebar."),
+            ("2", "Select the seeds you want to buy from the inventory grid."),
+            ("3", "Configure 'Seeds Per Trip' (how many of each seed to buy)."),
+            ("4", "Set the 'Shop Interval' (time between shop visits)."),
+            ("5", "Click 'START SHOPPING' to begin auto-buying."),
+            ("6", "Watch the timer countdown to the next purchase."),
+        ]
+        
+        for num, text in steps:
+            card = ctk.CTkFrame(scroll, fg_color=self.colors['window_bg'], corner_radius=6)
+            card.pack(fill="x", pady=4)
+            
+            badge = ctk.CTkLabel(
+                card,
+                text=num,
+                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+                text_color=self.colors['window_bg'],
+                fg_color=self.colors['blurple'],
+                width=24,
+                height=24,
+                corner_radius=12
+            )
+            badge.pack(side="left", padx=8, pady=8)
+            
+            ctk.CTkLabel(
+                card,
+                text=text,
+                font=ctk.CTkFont(family="Segoe UI", size=11),
+                text_color=self.colors['text_primary'],
+                anchor="w",
+                wraplength=350,
+                justify="left"
+            ).pack(side="left", fill="x", expand=True, padx=(0, 8))
+        
+        # Tips section
+        ctk.CTkLabel(
+            scroll,
+            text="Tips",
+            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
+            text_color=self.colors['text_primary']
+        ).pack(anchor="w", pady=(20, 5))
+        
+        tips = [
+            "• Enable Shopping from Farm tab to auto-buy while harvesting.",
+            "• The first purchase happens 5 seconds after starting.",
+            "• Out-of-stock items are automatically skipped.",
+            "• The timer shows when the next shop visit will occur.",
+        ]
+        
+        for tip in tips:
+            ctk.CTkLabel(
+                scroll,
+                text=tip,
+                font=ctk.CTkFont(family="Segoe UI", size=11),
+                text_color=self.colors['text_secondary'],
+                anchor="w"
+            ).pack(anchor="w", pady=2)
     
     def _populate_about(self, parent):
         """Content for About page with project info and links."""
