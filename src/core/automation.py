@@ -105,11 +105,15 @@ def locate_image(image, confidence, bottom_half=False, grayscale=True):
         # Convert to grayscale if needed
         if grayscale:
             screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2GRAY)
+            # Apply binary threshold to isolate white text (background-agnostic)
+            _, screenshot_thresh = cv2.threshold(screenshot_gray, 200, 255, cv2.THRESH_BINARY)
+            _, template_thresh = cv2.threshold(template, 200, 255, cv2.THRESH_BINARY)
         else:
-            screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
+            screenshot_thresh = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
+            template_thresh = template
         
         # Perform template matching using TM_CCOEFF_NORMED (more robust to brightness/color variations)
-        result = cv2.matchTemplate(screenshot_gray, template, cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(screenshot_thresh, template_thresh, cv2.TM_CCOEFF_NORMED)
         
         # Find the maximum match value
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
@@ -173,11 +177,15 @@ def locate_image_with_confidence(image, confidence, bottom_half=False, grayscale
         # Convert to grayscale if needed
         if grayscale:
             screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2GRAY)
+            # Apply binary threshold to isolate white text (background-agnostic)
+            _, screenshot_thresh = cv2.threshold(screenshot_gray, 200, 255, cv2.THRESH_BINARY)
+            _, template_thresh = cv2.threshold(template, 200, 255, cv2.THRESH_BINARY)
         else:
-            screenshot_gray = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
+            screenshot_thresh = cv2.cvtColor(screenshot_np, cv2.COLOR_RGB2BGR)
+            template_thresh = template
         
         # Perform template matching using TM_CCOEFF_NORMED
-        result = cv2.matchTemplate(screenshot_gray, template, cv2.TM_CCOEFF_NORMED)
+        result = cv2.matchTemplate(screenshot_thresh, template_thresh, cv2.TM_CCOEFF_NORMED)
         
         # Find the maximum match value
         min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(result)
@@ -212,11 +220,9 @@ def check_inventory_full():
     # We'll also get the actual match value for debugging
     result, actual_confidence = locate_image_with_confidence(image_path, confidence=Config.INVENTORY_CONFIDENCE, grayscale=True)
     
-    # Debug output with actual match score
+    # Only print when detected (not on every check to avoid spam)
     if result is not None:
-        print(f"✓ Inventory full detected! (match: {actual_confidence:.3f}, threshold: {Config.INVENTORY_CONFIDENCE})")
-    else:
-        print(f"✗ Inventory check #{state.stats['inventory_checks']} - Not detected (best match: {actual_confidence:.3f}, threshold: {Config.INVENTORY_CONFIDENCE})")
+        print(f"✓ Inventory full detected! (match: {actual_confidence:.3f})")
     
     return result is not None
 
