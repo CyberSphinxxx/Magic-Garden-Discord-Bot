@@ -14,7 +14,14 @@ class Config:
     HARVEST_DELAY = 0.1
     LOOP_COOLDOWN = 2
     SELL_RETURN_DELAY = 1.0
-    IMAGE_FOLDER = "images/"
+    IMAGE_FOLDER = "src/images/"
+    AUTOBUY_ENABLED = False
+    SELECTED_SEED = 'Carrot'
+    SELECTED_SEEDS = ['Carrot']  # List of seeds to buy in order
+    HARVESTING_ENABLED = True
+    AUTOBUY_INTERVAL = 180  # Default 3 minutes in seconds
+    SEEDS_PER_TRIP = 1  # Number of each seed to buy per shop visit
+    SHOP_SEARCH_ATTEMPTS = 7  # Number of scroll attempts to find a seed
     
     @classmethod
     def save(cls):
@@ -27,6 +34,13 @@ class Config:
             'HARVEST_DELAY': cls.HARVEST_DELAY,
             'LOOP_COOLDOWN': cls.LOOP_COOLDOWN,
             'SELL_RETURN_DELAY': cls.SELL_RETURN_DELAY,
+            'AUTOBUY_ENABLED': cls.AUTOBUY_ENABLED,
+            'SELECTED_SEED': cls.SELECTED_SEED,
+            'SELECTED_SEEDS': cls.SELECTED_SEEDS,
+            'HARVESTING_ENABLED': cls.HARVESTING_ENABLED,
+            'AUTOBUY_INTERVAL': cls.AUTOBUY_INTERVAL,
+            'SEEDS_PER_TRIP': cls.SEEDS_PER_TRIP,
+            'SHOP_SEARCH_ATTEMPTS': cls.SHOP_SEARCH_ATTEMPTS,
         }
         try:
             # Save config in a user-specific, persistent location
