@@ -39,11 +39,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: dist/MagicGardenBot.exe
+          append_body: true
           body: |
-            ## Magic Garden Bot ${{ github.ref_name }}
-
-            A new release of the Magic Garden Bot.
-
             ### Installation
             1. Download `MagicGardenBot.exe` from the assets below.
             2. Run the executable directly.
