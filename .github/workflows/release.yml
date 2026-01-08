@@ -2,8 +2,8 @@ name: Build and Release
 
 on:
   push:
-    branches:
-      - main
+    tags:
+      - "v*.*.*"  # Only runs when you push a tag like v1.0.0, v2.1.0, etc.
 
 permissions:
   contents: write
@@ -16,13 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # Fetch all history for all tags
           fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11" # A stable and common Python version
+          python-version: "3.11"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
@@ -36,29 +35,12 @@ jobs:
           pyinstaller --onefile --windowed --icon=src/bot_icon.ico --add-data "src/images;images" --name="MagicGardenBot" main.py
         shell: pwsh
 
-      - name: Get next version tag
-        id: get_version
-        # This script runs in PowerShell on the Windows runner
-        run: |
-          $latest_tag = git describe --tags --abbrev=0 2>$null
-          if (-not $latest_tag) {
-            $latest_tag = "v2.0.0" # Starting tag if none exist
-          }
-          $version = $latest_tag.Substring(1)
-          $major, $minor, $patch = $version.Split('.')
-          $new_patch = [int]$patch + 1
-          $new_tag = "v$major.$minor.$new_patch"
-          echo "new_tag=$new_tag" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-        shell: pwsh
-
-      - name: Create GitHub Release and Upload Asset
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.new_tag }}
-          name: Release ${{ env.new_tag }}
-          files: dist/MagicGardenBot.exe # Correct path to the built executable
+          files: dist/MagicGardenBot.exe
           body: |
-            ## Magic Garden Bot Release ${{ env.new_tag }}
+            ## Magic Garden Bot ${{ github.ref_name }}
 
             A new release of the Magic Garden Bot.
 
