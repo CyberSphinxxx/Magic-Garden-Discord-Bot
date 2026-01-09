@@ -12,7 +12,7 @@ import time
 import os
 
 from pynput.keyboard import Key
-import pydirectinput
+from . import input_handler
 import cv2
 import pyautogui
 import numpy as np
@@ -35,12 +35,12 @@ def _press_shift_key(key_char, pre_delay=0.2, post_delay=0.5):
         pre_delay: Delay before releasing key
         post_delay: Delay after releasing all keys
     """
-    pydirectinput.keyDown('shift')
+    input_handler.key_down('shift')
     time.sleep(pre_delay)
-    pydirectinput.keyDown(key_char)
+    input_handler.key_down(key_char)
     time.sleep(pre_delay)
-    pydirectinput.keyUp(key_char)
-    pydirectinput.keyUp('shift')
+    input_handler.key_up(key_char)
+    input_handler.key_up('shift')
     time.sleep(post_delay)
 
 
@@ -252,9 +252,9 @@ def _open_shop(logger):
     _press_shift_key('1')
     
     logger("🚪 Opening shop...", "info")
-    pydirectinput.keyDown('space')
+    input_handler.key_down('space')
     time.sleep(0.2)
-    pydirectinput.keyUp('space')
+    input_handler.key_up('space')
     time.sleep(0.5)
     
     # Verify shop is open
@@ -281,9 +281,9 @@ def _open_shop(logger):
 def _close_shop_and_return(logger):
     """Close shop and return to garden."""
     logger("🚪 Closing shop...", "info")
-    pydirectinput.press('esc')
+    input_handler.press('esc')
     time.sleep(0.5)
-    pydirectinput.press('esc')
+    input_handler.press('esc')
     time.sleep(0.5)
     
     logger("🌱 Returning to garden...", "info")
@@ -357,7 +357,7 @@ def run_autobuy_routine(logger=print):
         # Check if stopped
         if not state.bot_running:
             logger("⏹️ Autobuy stopped by user", "warning")
-            pydirectinput.press('escape')
+            input_handler.press('escape')
             return False
         
         # Load templates
@@ -365,7 +365,7 @@ def run_autobuy_routine(logger=print):
         seed_templates, buy_button_data, header_data = templates
         
         if buy_button_data is None:
-            pydirectinput.press('escape')
+            input_handler.press('escape')
             return False
         
         buy_button_template, buy_thresh = buy_button_data
@@ -382,7 +382,7 @@ def run_autobuy_routine(logger=print):
         for scroll_idx in range(max_scrolls):
             if not state.bot_running:
                 logger("⏹️ Autobuy stopped by user", "warning")
-                pydirectinput.press('escape')
+                input_handler.press('escape')
                 return False
             
             if not remaining_seeds:
@@ -413,7 +413,7 @@ def run_autobuy_routine(logger=print):
             
             for seed_name, center_x, center_y, confidence in seeds_found_this_view:
                 if not state.bot_running:
-                    pydirectinput.press('escape')
+                    input_handler.press('escape')
                     return False
                 
                 logger(f"✓ Found {seed_name} at ({center_x}, {center_y})", "success")
@@ -465,10 +465,10 @@ def _scroll_shop(screenshot_thresh, header_template, header_thresh, scroll_idx, 
     else:
         # Try to recover shop view
         logger("⚠️ Shop header lost, attempting recovery...", "warning")
-        pydirectinput.press('escape')
+        input_handler.press('escape')
         time.sleep(0.3)
         _press_shift_key('1')
-        pydirectinput.press('space')
+        input_handler.press('space')
         time.sleep(1.0)
 
 
