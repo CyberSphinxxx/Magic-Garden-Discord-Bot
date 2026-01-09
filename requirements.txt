@@ -3,4 +3,4 @@ opencv-python
 numpy
 pynput
 customtkinter
-pydirectinput
+pydirectinput; sys_platform == 'win32'
