@@ -1,10 +1,20 @@
+"""
+Magic Garden Bot - User Guide Window.
+
+Standalone Help & Guide window with Discord-style sidebar navigation.
+Refactored for reduced code duplication and better maintainability.
+"""
+
 import customtkinter as ctk
 import webbrowser
 
+# Font constants
+FONT_FAMILY = "Segoe UI"
+
+
 class GuideWindow(ctk.CTkToplevel):
-    """
-    Standalone Help & Guide window with Discord-style sidebar navigation.
-    """
+    """Standalone Help & Guide window with Discord-style sidebar navigation."""
+    
     def __init__(self, master, colors=None):
         super().__init__(master)
         
@@ -41,6 +51,117 @@ class GuideWindow(ctk.CTkToplevel):
         # Default to About page
         self.select_frame("about")
     
+    # =========================================================================
+    # UI HELPERS
+    # =========================================================================
+    
+    def _create_scrollable_page(self, parent):
+        """Create a scrollable frame for page content."""
+        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
+        scroll.pack(fill="both", expand=True)
+        return scroll
+    
+    def _create_page_title(self, parent, title):
+        """Create a page title label."""
+        ctk.CTkLabel(
+            parent,
+            text=title,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=18, weight="bold"),
+            text_color=self.colors['text_primary']
+        ).pack(anchor="w", pady=(0, 15))
+    
+    def _create_section_header(self, parent, title):
+        """Create a section header label."""
+        ctk.CTkLabel(
+            parent,
+            text=title,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=14, weight="bold"),
+            text_color=self.colors['text_primary']
+        ).pack(anchor="w", pady=(10, 5))
+    
+    def _create_step_card(self, parent, number, text, badge_size=28):
+        """Create a styled step card with number badge."""
+        card = ctk.CTkFrame(parent, fg_color=self.colors['window_bg'], corner_radius=6)
+        card.pack(fill="x", pady=4)
+        
+        badge = ctk.CTkLabel(
+            card,
+            text=number,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12 if badge_size < 28 else 14, weight="bold"),
+            text_color=self.colors['window_bg'],
+            fg_color=self.colors['blurple'],
+            width=badge_size,
+            height=badge_size,
+            corner_radius=badge_size // 2
+        )
+        badge.pack(side="left", padx=8 if badge_size < 28 else 10, pady=8 if badge_size < 28 else 10)
+        
+        ctk.CTkLabel(
+            card,
+            text=text,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11 if badge_size < 28 else 12),
+            text_color=self.colors['text_primary'],
+            anchor="w",
+            wraplength=350,
+            justify="left"
+        ).pack(side="left", fill="x", expand=True, padx=(0, 8))
+    
+    def _create_bullet_list(self, parent, items):
+        """Create a bullet point list."""
+        for item in items:
+            ctk.CTkLabel(
+                parent,
+                text=item,
+                font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+                text_color=self.colors['text_secondary'],
+                anchor="w"
+            ).pack(anchor="w", pady=2)
+    
+    def _create_definition_row(self, parent, term, description):
+        """Create a term/definition row."""
+        row = ctk.CTkFrame(parent, fg_color="transparent")
+        row.pack(fill="x", pady=5)
+        
+        ctk.CTkLabel(
+            row,
+            text=f"{term}:",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
+            text_color=self.colors['text_primary'],
+            anchor="w"
+        ).pack(anchor="w")
+        
+        ctk.CTkLabel(
+            row,
+            text=description,
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+            text_color=self.colors['text_secondary'],
+            anchor="w",
+            wraplength=400
+        ).pack(anchor="w", padx=(10, 0))
+    
+    def _create_qa_pair(self, parent, question, answer):
+        """Create a question/answer pair."""
+        ctk.CTkLabel(
+            parent,
+            text=f"Q: {question}",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
+            text_color=self.colors['text_primary'],
+            anchor="w"
+        ).pack(anchor="w", pady=(10, 2))
+        
+        ctk.CTkLabel(
+            parent,
+            text=f"A: {answer}",
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
+            text_color=self.colors['text_secondary'],
+            anchor="w",
+            wraplength=400
+        ).pack(anchor="w", padx=(15, 0))
+    
+    # =========================================================================
+    # MAIN UI BUILDING
+    # =========================================================================
+    
     def _build_ui(self):
         """Build the sidebar navigation layout."""
         # Configure grid: 2 columns
@@ -60,7 +181,7 @@ class GuideWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             self.navigation_frame,
             text="USER GUIDE",
-            font=ctk.CTkFont(family="Segoe UI", size=10, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=10, weight="bold"),
             text_color=self.colors['text_muted']
         ).pack(anchor="w", padx=15, pady=(20, 10))
         
@@ -81,7 +202,7 @@ class GuideWindow(ctk.CTkToplevel):
                 fg_color="transparent",
                 hover_color="#36393f",
                 text_color=self.colors['text_secondary'],
-                font=ctk.CTkFont(family="Segoe UI", size=12),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                 height=40,
                 corner_radius=6,
                 command=lambda k=key: self.select_frame(k)
@@ -102,29 +223,18 @@ class GuideWindow(ctk.CTkToplevel):
     
     def _create_pages(self):
         """Create all page frames (hidden initially)."""
-        # About Page
-        self.pages["about"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self._populate_about(self.pages["about"])
+        page_builders = {
+            "about": self._populate_about,
+            "quick_start": self._populate_quick_start,
+            "settings": self._populate_settings,
+            "safety": self._populate_safety,
+            "faq": self._populate_faq,
+            "auto_shop": self._populate_auto_shop,
+        }
         
-        # Quick Start Page
-        self.pages["quick_start"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self._populate_quick_start(self.pages["quick_start"])
-        
-        # Settings Page
-        self.pages["settings"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self._populate_settings(self.pages["settings"])
-        
-        # Safety Page
-        self.pages["safety"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self._populate_safety(self.pages["safety"])
-        
-        # FAQ Page
-        self.pages["faq"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self._populate_faq(self.pages["faq"])
-        
-        # Auto Shop Page
-        self.pages["auto_shop"] = ctk.CTkFrame(self.content_area, fg_color="transparent")
-        self._populate_auto_shop(self.pages["auto_shop"])
+        for key, builder in page_builders.items():
+            self.pages[key] = ctk.CTkFrame(self.content_area, fg_color="transparent")
+            builder(self.pages[key])
     
     def select_frame(self, name):
         """Switch to the selected page and highlight the nav button."""
@@ -148,18 +258,14 @@ class GuideWindow(ctk.CTkToplevel):
                 text_color=self.colors['text_primary']
             )
     
+    # =========================================================================
+    # PAGE CONTENT
+    # =========================================================================
+    
     def _populate_quick_start(self, parent):
-        """Content for Quick Start page with styled Step Cards."""
-        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
-        
-        # Page Title
-        ctk.CTkLabel(
-            scroll,
-            text="Quick Start Guide",
-            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(0, 15))
+        """Content for Quick Start page."""
+        scroll = self._create_scrollable_page(parent)
+        self._create_page_title(scroll, "Quick Start Guide")
         
         steps = [
             ("1", "Launch the bot application."),
@@ -172,42 +278,12 @@ class GuideWindow(ctk.CTkToplevel):
         ]
         
         for num, text in steps:
-            card = ctk.CTkFrame(scroll, fg_color=self.colors['window_bg'], corner_radius=6)
-            card.pack(fill="x", pady=4)
-            
-            badge = ctk.CTkLabel(
-                card,
-                text=num,
-                font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-                text_color=self.colors['window_bg'],
-                fg_color=self.colors['blurple'],
-                width=28,
-                height=28,
-                corner_radius=14
-            )
-            badge.pack(side="left", padx=10, pady=10)
-            
-            ctk.CTkLabel(
-                card,
-                text=text,
-                font=ctk.CTkFont(family="Segoe UI", size=12),
-                text_color=self.colors['text_primary'],
-                anchor="w",
-                wraplength=350,
-                justify="left"
-            ).pack(side="left", fill="x", expand=True, padx=(0, 10))
+            self._create_step_card(scroll, num, text)
     
     def _populate_settings(self, parent):
-        """Content for Settings page with definitions."""
-        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
-        
-        ctk.CTkLabel(
-            scroll,
-            text="Settings Reference",
-            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(0, 15))
+        """Content for Settings page."""
+        scroll = self._create_scrollable_page(parent)
+        self._create_page_title(scroll, "Settings Reference")
         
         definitions = [
             ("Columns", "Number of columns in your garden grid."),
@@ -218,37 +294,12 @@ class GuideWindow(ctk.CTkToplevel):
         ]
         
         for term, desc in definitions:
-            row = ctk.CTkFrame(scroll, fg_color="transparent")
-            row.pack(fill="x", pady=5)
-            
-            ctk.CTkLabel(
-                row,
-                text=f"{term}:",
-                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-                text_color=self.colors['text_primary'],
-                anchor="w"
-            ).pack(anchor="w")
-            
-            ctk.CTkLabel(
-                row,
-                text=desc,
-                font=ctk.CTkFont(family="Segoe UI", size=11),
-                text_color=self.colors['text_secondary'],
-                anchor="w",
-                wraplength=400
-            ).pack(anchor="w", padx=(10, 0))
+            self._create_definition_row(scroll, term, desc)
     
     def _populate_safety(self, parent):
-        """Content for Safety page with warning box."""
-        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
-        
-        ctk.CTkLabel(
-            scroll,
-            text="Safety Guidelines",
-            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(0, 15))
+        """Content for Safety page."""
+        scroll = self._create_scrollable_page(parent)
+        self._create_page_title(scroll, "Safety Guidelines")
         
         # Warning Box
         warning_frame = ctk.CTkFrame(
@@ -263,14 +314,14 @@ class GuideWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             warning_frame,
             text="⚠️ WARNING",
-            font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12, weight="bold"),
             text_color=self.colors['red']
         ).pack(anchor="w", padx=15, pady=(10, 5))
         
         ctk.CTkLabel(
             warning_frame,
             text="To avoid detection, do not set delays to 0.0s.\nKeep 'Move Delay' above 0.12s for safe operation.",
-            font=ctk.CTkFont(family="Segoe UI", size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
             text_color=self.colors['text_secondary'],
             wraplength=380,
             justify="left"
@@ -282,26 +333,12 @@ class GuideWindow(ctk.CTkToplevel):
             "• Do not leave unattended for extended periods.",
             "• We are not responsible for any consequences.",
         ]
-        for note in notes:
-            ctk.CTkLabel(
-                scroll,
-                text=note,
-                font=ctk.CTkFont(family="Segoe UI", size=11),
-                text_color=self.colors['text_secondary'],
-                anchor="w"
-            ).pack(anchor="w", pady=2)
+        self._create_bullet_list(scroll, notes)
     
     def _populate_faq(self, parent):
-        """Content for FAQ page with Q&A pairs."""
-        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
-        
-        ctk.CTkLabel(
-            scroll,
-            text="Frequently Asked Questions",
-            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(0, 15))
+        """Content for FAQ page."""
+        scroll = self._create_scrollable_page(parent)
+        self._create_page_title(scroll, "Frequently Asked Questions")
         
         faqs = [
             ("Map is blank?", "Resize the window to refresh the grid."),
@@ -312,53 +349,25 @@ class GuideWindow(ctk.CTkToplevel):
         ]
         
         for q, a in faqs:
-            ctk.CTkLabel(
-                scroll,
-                text=f"Q: {q}",
-                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-                text_color=self.colors['text_primary'],
-                anchor="w"
-            ).pack(anchor="w", pady=(10, 2))
-            
-            ctk.CTkLabel(
-                scroll,
-                text=f"A: {a}",
-                font=ctk.CTkFont(family="Segoe UI", size=11),
-                text_color=self.colors['text_secondary'],
-                anchor="w",
-                wraplength=400
-            ).pack(anchor="w", padx=(15, 0))
+            self._create_qa_pair(scroll, q, a)
     
     def _populate_auto_shop(self, parent):
-        """Content for Auto Shop page with Shop Mode instructions."""
-        scroll = ctk.CTkScrollableFrame(parent, fg_color="transparent")
-        scroll.pack(fill="both", expand=True)
-        
-        # Page Title
-        ctk.CTkLabel(
-            scroll,
-            text="Auto Shop Guide",
-            font=ctk.CTkFont(family="Segoe UI", size=18, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(0, 15))
+        """Content for Auto Shop page."""
+        scroll = self._create_scrollable_page(parent)
+        self._create_page_title(scroll, "Auto Shop Guide")
         
         # Description
         ctk.CTkLabel(
             scroll,
             text="The Auto Shop feature automatically purchases seeds from the in-game shop at regular intervals.",
-            font=ctk.CTkFont(family="Segoe UI", size=11),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=11),
             text_color=self.colors['text_secondary'],
             wraplength=400,
             justify="left"
         ).pack(anchor="w", pady=(0, 15))
         
         # How to Use section
-        ctk.CTkLabel(
-            scroll,
-            text="How to Use",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(10, 5))
+        self._create_section_header(scroll, "How to Use")
         
         steps = [
             ("1", "Go to the 'Shop' tab in the sidebar."),
@@ -370,38 +379,10 @@ class GuideWindow(ctk.CTkToplevel):
         ]
         
         for num, text in steps:
-            card = ctk.CTkFrame(scroll, fg_color=self.colors['window_bg'], corner_radius=6)
-            card.pack(fill="x", pady=4)
-            
-            badge = ctk.CTkLabel(
-                card,
-                text=num,
-                font=ctk.CTkFont(family="Segoe UI", size=12, weight="bold"),
-                text_color=self.colors['window_bg'],
-                fg_color=self.colors['blurple'],
-                width=24,
-                height=24,
-                corner_radius=12
-            )
-            badge.pack(side="left", padx=8, pady=8)
-            
-            ctk.CTkLabel(
-                card,
-                text=text,
-                font=ctk.CTkFont(family="Segoe UI", size=11),
-                text_color=self.colors['text_primary'],
-                anchor="w",
-                wraplength=350,
-                justify="left"
-            ).pack(side="left", fill="x", expand=True, padx=(0, 8))
+            self._create_step_card(scroll, num, text, badge_size=24)
         
         # Tips section
-        ctk.CTkLabel(
-            scroll,
-            text="Tips",
-            font=ctk.CTkFont(family="Segoe UI", size=14, weight="bold"),
-            text_color=self.colors['text_primary']
-        ).pack(anchor="w", pady=(20, 5))
+        self._create_section_header(scroll, "Tips")
         
         tips = [
             "• Enable Shopping from Farm tab to auto-buy while harvesting.",
@@ -409,18 +390,10 @@ class GuideWindow(ctk.CTkToplevel):
             "• Out-of-stock items are automatically skipped.",
             "• The timer shows when the next shop visit will occur.",
         ]
-        
-        for tip in tips:
-            ctk.CTkLabel(
-                scroll,
-                text=tip,
-                font=ctk.CTkFont(family="Segoe UI", size=11),
-                text_color=self.colors['text_secondary'],
-                anchor="w"
-            ).pack(anchor="w", pady=2)
+        self._create_bullet_list(scroll, tips)
     
     def _populate_about(self, parent):
-        """Content for About page with project info and links."""
+        """Content for About page."""
         container = ctk.CTkFrame(parent, fg_color="transparent")
         container.pack(fill="both", expand=True)
         
@@ -428,7 +401,7 @@ class GuideWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             container,
             text="Magic Garden Bot",
-            font=ctk.CTkFont(family="Segoe UI", size=24, weight="bold"),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=24, weight="bold"),
             text_color=self.colors['text_primary']
         ).pack(anchor="center", pady=(40, 5))
         
@@ -436,7 +409,7 @@ class GuideWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             container,
             text="An open-source automation tool for the\nMagic Garden Discord game.",
-            font=ctk.CTkFont(family="Segoe UI", size=12),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=12),
             text_color=self.colors['text_secondary'],
             justify="center"
         ).pack(anchor="center", pady=(20, 30))
@@ -459,7 +432,7 @@ class GuideWindow(ctk.CTkToplevel):
                 fg_color="#4a4a4a",
                 hover_color="#5a5a5a",
                 text_color=self.colors['text_primary'],
-                font=ctk.CTkFont(family="Segoe UI", size=12),
+                font=ctk.CTkFont(family=FONT_FAMILY, size=12),
                 height=36,
                 width=220,
                 corner_radius=8
@@ -470,6 +443,6 @@ class GuideWindow(ctk.CTkToplevel):
         ctk.CTkLabel(
             container,
             text="Created by John Lemar Gonzales aka CyberSphinxxx",
-            font=ctk.CTkFont(family="Segoe UI", size=10),
+            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
             text_color=self.colors['text_secondary']
         ).pack(side="bottom", pady=(30, 20))
