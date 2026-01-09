@@ -1,6 +1,6 @@
 import cv2
 import pyautogui
-import pydirectinput
+from src.core import input_handler
 import time
 import os
 import numpy as np
@@ -28,23 +28,23 @@ class ShopTester:
         Verifies the shop is open by looking for the shop header image.
         """
         print("Opening shop...")
-        print("DEBUG: Sending Shift+1 (using pydirectinput)...")
+        print("DEBUG: Sending Shift+1 (using input_handler)...")
         
         # Press Shift+1 with explicit holds for game input detection
-        pydirectinput.keyDown('shift')
+        input_handler.key_down('shift')
         time.sleep(0.2)
-        pydirectinput.keyDown('1')
+        input_handler.key_down('1')
         time.sleep(0.2)
-        pydirectinput.keyUp('1')
-        pydirectinput.keyUp('shift')
+        input_handler.key_up('1')
+        input_handler.key_up('shift')
         print("DEBUG: Shift+1 sent, waiting...")
         time.sleep(0.5)
         
         # Press Space with explicit hold
-        print("DEBUG: Sending Space (using pydirectinput)...")
-        pydirectinput.keyDown('space')
+        print("DEBUG: Sending Space (using input_handler)...")
+        input_handler.key_down('space')
         time.sleep(0.2)
-        pydirectinput.keyUp('space')
+        input_handler.key_up('space')
         print("DEBUG: Space sent, waiting...")
         time.sleep(0.5)
         
@@ -186,20 +186,20 @@ class ShopTester:
         Then return to garden by pressing Shift+2.
         """
         print("Closing shop...")
-        pydirectinput.press('esc')
+        input_handler.press('esc')
         time.sleep(0.5)
-        pydirectinput.press('esc')
+        input_handler.press('esc')
         time.sleep(0.5)
         print("Shop closed.")
         
         # Return to garden
         print("Returning to garden...")
-        pydirectinput.keyDown('shift')
+        input_handler.key_down('shift')
         time.sleep(0.2)
-        pydirectinput.keyDown('2')
+        input_handler.key_down('2')
         time.sleep(0.2)
-        pydirectinput.keyUp('2')
-        pydirectinput.keyUp('shift')
+        input_handler.key_up('2')
+        input_handler.key_up('shift')
         time.sleep(0.5)
         print("Returned to garden.")
     
