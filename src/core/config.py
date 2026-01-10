@@ -1,5 +1,24 @@
 import json
 import os
+import sys
+
+
+def resource_path(relative_path):
+    """
+    Get absolute path to resource (works for dev and PyInstaller .exe).
+    
+    When running as a PyInstaller bundle, files are extracted to a temp
+    directory stored in sys._MEIPASS. When running as a script, we use
+    the current working directory.
+    """
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except AttributeError:
+        # Running as script - use current directory
+        base_path = os.path.abspath(".")
+    return os.path.join(base_path, relative_path)
+
 
 class Config:
     """
@@ -14,7 +33,9 @@ class Config:
     HARVEST_DELAY = 0.1
     LOOP_COOLDOWN = 2
     SELL_RETURN_DELAY = 1.0
-    IMAGE_FOLDER = "src/images/"
+    # Use resource_path for PyInstaller compatibility
+    # Note: .spec file bundles 'src/images' as 'images', so we check both paths
+    IMAGE_FOLDER = resource_path("images") if hasattr(sys, '_MEIPASS') else "src/images/"
     AUTOBUY_ENABLED = False
     SELECTED_SEED = 'Carrot'
     SELECTED_SEEDS = ['Carrot']  # List of seeds to buy in order
@@ -22,6 +43,10 @@ class Config:
     AUTOBUY_INTERVAL = 180  # Default 3 minutes in seconds
     SEEDS_PER_TRIP = 1  # Number of each seed to buy per shop visit
     SHOP_SEARCH_ATTEMPTS = 7  # Number of scroll attempts to find a seed
+    
+    # Auto-Update Settings
+    AUTO_UPDATE_CHECK = True  # Check for updates on startup
+    UPDATE_SKIPPED_VERSION = None  # Version user chose to skip
     
     @classmethod
     def save(cls):
@@ -41,6 +66,8 @@ class Config:
             'AUTOBUY_INTERVAL': cls.AUTOBUY_INTERVAL,
             'SEEDS_PER_TRIP': cls.SEEDS_PER_TRIP,
             'SHOP_SEARCH_ATTEMPTS': cls.SHOP_SEARCH_ATTEMPTS,
+            'AUTO_UPDATE_CHECK': cls.AUTO_UPDATE_CHECK,
+            'UPDATE_SKIPPED_VERSION': cls.UPDATE_SKIPPED_VERSION,
         }
         try:
             # Save config in a user-specific, persistent location
