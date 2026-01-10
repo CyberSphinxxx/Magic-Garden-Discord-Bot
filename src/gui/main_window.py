@@ -36,6 +36,13 @@ from src.gui.ui_builders import (
 )
 from src.gui.controllers import BotController, ConfigController, SeedController
 
+# Import update functionality
+from src.core.updater import (
+    CURRENT_VERSION, check_for_updates_async, 
+    download_update_async, apply_update
+)
+from src.gui.update_dialog import UpdateDialog, NoUpdateDialog
+
 
 class HarvestBotGUI:
     """Modern Gaming Dashboard for Magic Garden Bot using customtkinter."""
@@ -398,6 +405,20 @@ class HarvestBotGUI:
             text_color=self.colors['text_muted']
         )
         footer.pack(side="bottom", pady=10)
+        
+        # Version button (clickable for update check)
+        self.version_button = ctk.CTkButton(
+            sidebar_scroll,
+            text=f"🔄 v{CURRENT_VERSION}",
+            command=self.check_for_updates,
+            fg_color="transparent",
+            hover_color=self.colors['card_bg'],
+            text_color=self.colors['text_muted'],
+            font=ctk.CTkFont(family=FONT_FAMILY, size=10),
+            height=24,
+            cursor="hand2"
+        )
+        self.version_button.pack(side="bottom", pady=(0, 5))
     
     def _build_main_area(self):
         """Build the right-side main area with swappable Farm/Shop views and Log."""
@@ -755,3 +776,132 @@ class HarvestBotGUI:
             self.guide_window = GuideWindow(self.root, colors=self.colors)
         else:
             self.guide_window.focus_force()
+    
+    # =========================================================================
+    # AUTO-UPDATE FUNCTIONALITY
+    # =========================================================================
+    
+    def check_for_updates(self, silent: bool = False):
+        """
+        Check for updates from GitHub.
+        
+        Args:
+            silent: If True, don't show dialogs unless update is available
+        """
+        # Update button text to show checking (for manual checks)
+        if not silent:
+            self.version_button.configure(text="⏳ Checking...")
+            self.version_button.configure(state="disabled")
+        
+        # Check in background
+        check_for_updates_async(
+            lambda result: self.root.after(0, lambda: self._on_update_check_complete(result, silent))
+        )
+    
+    def _on_update_check_complete(self, result: dict, silent: bool):
+        """Handle update check completion."""
+        # Restore button state
+        self.version_button.configure(text=f"🔄 v{CURRENT_VERSION}")
+        self.version_button.configure(state="normal")
+        
+        # Handle errors
+        if result.get('error'):
+            if not silent:
+                self.log(f"Update check failed: {result['error']}", "warning")
+                messagebox.showwarning(
+                    "Update Check Failed",
+                    f"Could not check for updates:\n{result['error']}"
+                )
+            return
+        
+        # No update available
+        if not result.get('available'):
+            if not silent:
+                NoUpdateDialog(self.root, result['current_version'], colors=self.colors)
+            return
+        
+        # Check if this version was skipped
+        skipped = config.Config.UPDATE_SKIPPED_VERSION
+        latest = result.get('latest_version', '')
+        if silent and skipped and skipped == latest:
+            self.log(f"Update {latest} available but skipped by user", "info")
+            return
+        
+        # Show update dialog
+        self._show_update_dialog(result)
+    
+    def _show_update_dialog(self, update_info: dict):
+        """Show the update available dialog."""
+        self.update_dialog = UpdateDialog(
+            self.root,
+            update_info,
+            on_update=lambda: self._start_download(update_info),
+            on_skip=self._on_skip_version,
+            on_dismiss=lambda: None,
+            colors=self.colors
+        )
+    
+    def _on_skip_version(self, version: str):
+        """Handle user skipping a version."""
+        config.Config.UPDATE_SKIPPED_VERSION = version
+        config.Config.save()
+        self.log(f"Skipped update {version}", "info")
+    
+    def _start_download(self, update_info: dict):
+        """Start downloading the update."""
+        download_url = update_info.get('download_url')
+        if not download_url:
+            messagebox.showerror(
+                "Download Error",
+                "No download URL available for this release."
+            )
+            return
+        
+        self.log(f"Downloading update {update_info.get('latest_version')}...", "info")
+        
+        def on_progress(downloaded, total):
+            # Update progress on main thread
+            self.root.after(0, lambda: self.update_dialog.update_progress(downloaded, total))
+        
+        def on_complete(file_path):
+            self.root.after(0, lambda: self._on_download_complete(file_path))
+        
+        download_update_async(download_url, on_progress, on_complete)
+    
+    def _on_download_complete(self, file_path: str):
+        """Handle download completion."""
+        if not file_path:
+            if hasattr(self, 'update_dialog') and self.update_dialog.winfo_exists():
+                self.update_dialog.show_download_error("Download failed")
+            self.log("Update download failed", "error")
+            return
+        
+        self.log("Download complete, applying update...", "success")
+        
+        if hasattr(self, 'update_dialog') and self.update_dialog.winfo_exists():
+            self.update_dialog.show_download_complete()
+        
+        # Apply the update
+        if apply_update(file_path):
+            self.log("Update will be applied. Closing application...", "info")
+            # Give user a moment to see the message
+            self.root.after(1500, self._close_for_update)
+        else:
+            messagebox.showinfo(
+                "Development Mode",
+                "Running in development mode - update downloaded but not applied.\n"
+                f"Downloaded to: {file_path}"
+            )
+    
+    def _close_for_update(self):
+        """Close the application for update."""
+        try:
+            self.root.destroy()
+        except Exception:
+            pass
+    
+    def check_for_updates_on_startup(self):
+        """Check for updates on app startup (called after GUI is shown)."""
+        if config.Config.AUTO_UPDATE_CHECK:
+            # Small delay to let the app fully initialize
+            self.root.after(2000, lambda: self.check_for_updates(silent=True))
