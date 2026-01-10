@@ -24,6 +24,9 @@ def main():
     # The HarvestBotGUI class now handles all application logic.
     # We just need to create an instance of it.
     app = HarvestBotGUI(root)
+    
+    # Check for updates on startup (runs silently in background)
+    app.check_for_updates_on_startup()
 
     # Start the application's main event loop
     try:
