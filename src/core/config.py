@@ -33,6 +33,8 @@ class Config:
     HARVEST_DELAY = 0.1
     LOOP_COOLDOWN = 2
     SELL_RETURN_DELAY = 1.0
+    POST_PURCHASE_CLICK_DELAY = 0.3  # Delay before clicking seed to close menu after purchase
+    POST_PURCHASE_MENU_CLOSE_WAIT = 0.5  # Wait time after clicking seed to ensure menu closes
     # Use resource_path for PyInstaller compatibility
     # Note: .spec file bundles 'src/images' as 'images', so we check both paths
     IMAGE_FOLDER = resource_path("images") if hasattr(sys, '_MEIPASS') else "src/images/"
@@ -59,6 +61,8 @@ class Config:
             'HARVEST_DELAY': cls.HARVEST_DELAY,
             'LOOP_COOLDOWN': cls.LOOP_COOLDOWN,
             'SELL_RETURN_DELAY': cls.SELL_RETURN_DELAY,
+            'POST_PURCHASE_CLICK_DELAY': cls.POST_PURCHASE_CLICK_DELAY,
+            'POST_PURCHASE_MENU_CLOSE_WAIT': cls.POST_PURCHASE_MENU_CLOSE_WAIT,
             'AUTOBUY_ENABLED': cls.AUTOBUY_ENABLED,
             'SELECTED_SEED': cls.SELECTED_SEED,
             'SELECTED_SEEDS': cls.SELECTED_SEEDS,

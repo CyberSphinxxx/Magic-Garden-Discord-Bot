@@ -315,21 +315,28 @@ def _buy_seed(seed_name, center_x, center_y, buy_button_data, seeds_per_trip, lo
     
     max_loc, max_val, found = _match_and_find(screenshot_thresh, buy_thresh)
     
-    if found:
-        btn_height, btn_width = buy_button_template.shape
-        btn_center_x = max_loc[0] + btn_width // 2
-        btn_center_y = max_loc[1] + btn_height // 2
-        
-        logger(f"💰 Purchasing {seeds_per_trip}x {seed_name}...", "info")
-        for _ in range(seeds_per_trip):
-            pyautogui.click(btn_center_x, btn_center_y)
-            time.sleep(0.3)
-        
-        logger(f"✓ Purchased {seeds_per_trip}x {seed_name}!", "success")
-        return True
-    else:
-        logger(f"⚠️ Could not find buy button for {seed_name} (out of stock?)", "warning")
-        return False
+    try:
+        if found:
+            btn_height, btn_width = buy_button_template.shape
+            btn_center_x = max_loc[0] + btn_width // 2
+            btn_center_y = max_loc[1] + btn_height // 2
+            
+            logger(f"💰 Purchasing {seeds_per_trip}x {seed_name}...", "info")
+            for _ in range(seeds_per_trip):
+                pyautogui.click(btn_center_x, btn_center_y)
+                time.sleep(0.3)
+            
+            logger(f"✓ Purchased {seeds_per_trip}x {seed_name}!", "success")
+            return True
+        else:
+            logger(f"⚠️ Could not find buy button for {seed_name} (out of stock?)", "warning")
+            return False
+    finally:
+        # Always click on seed again to close the buy menu and reset menu state
+        # This ensures menu is closed regardless of purchase success or failure
+        time.sleep(Config.POST_PURCHASE_CLICK_DELAY)
+        pyautogui.click(center_x, center_y)
+        time.sleep(Config.POST_PURCHASE_MENU_CLOSE_WAIT)
 
 
 # =============================================================================
