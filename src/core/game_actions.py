@@ -326,9 +326,21 @@ def _buy_seed(seed_name, center_x, center_y, buy_button_data, seeds_per_trip, lo
             time.sleep(0.3)
         
         logger(f"✓ Purchased {seeds_per_trip}x {seed_name}!", "success")
+        
+        # Click on seed again to close the buy menu and reset menu state
+        time.sleep(0.3)
+        pyautogui.click(center_x, center_y)
+        time.sleep(0.5)
+        
         return True
     else:
         logger(f"⚠️ Could not find buy button for {seed_name} (out of stock?)", "warning")
+        
+        # Click on seed again to close any open menu
+        time.sleep(0.3)
+        pyautogui.click(center_x, center_y)
+        time.sleep(0.5)
+        
         return False
 
 
